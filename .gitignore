@@ -16,3 +16,7 @@ out/
 # misc
 .DS_Store
 *.log
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts

@@ -141,12 +141,15 @@ Claude only ever sees activities and time slots. It never ranks or judges people
    ```bash
    npm install
    ```
-3. Set up Supabase: in the SQL Editor, run `supabase/schema.sql`, then `supabase/seed.sql` for sample data
+3. Set up Supabase
+   - **Using the team's Supabase project:** it's already set up. Skip this step and don't run the SQL files: they delete all existing data.
+   - **Using your own new, empty project:** in the SQL Editor, run `supabase/schema.sql`, then `supabase/seed.sql` for sample data.
 4. Create `.env.local` with your keys (never commit this file)
    ```
    ANTHROPIC_API_KEY=your_key
    NEXT_PUBLIC_SUPABASE_URL=your_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key
+   ANTHROPIC_WORKSPACE_ID=your_workspace_id
    ```
 5. Run the app
    ```bash
