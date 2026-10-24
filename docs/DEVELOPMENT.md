@@ -74,7 +74,7 @@ and privileged room creation.
 ## API
 
 - POST /api/open-rooms: opens rooms with lib/nado (the "Let Claude open rooms"
-  button). Currently returns 501 until connected.
+  button). Saves rooms and invited members; see app/api/open-rooms/README.md.
 
 Keep route handlers focused on request validation and responses; put shared
 logic in lib/. Browser Realtime subscriptions (invitation cards, nado! taps)

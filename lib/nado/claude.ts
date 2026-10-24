@@ -20,7 +20,9 @@ export function makeClient() {
   const workspace = process.env.ANTHROPIC_WORKSPACE_ID;
   return new Anthropic(workspace ? { defaultHeaders: { "anthropic-workspace-id": workspace } } : {});
 }
-const client = makeClient();
+// 처음 쓸 때 만든다: 키가 없어도 빌드(Vercel 첫 배포)가 깨지지 않게
+let client: Anthropic | null = null;
+const getClient = () => (client ??= makeClient());
 
 export type OpenedRoom = Room & { invitation: string; icebreaker: string };
 export type Filtered = { original: string; activity: string; removed: string };
@@ -83,7 +85,7 @@ export async function openRoomsWithClaude(input: {
 // Claude에게 묻고 JSON으로 받기. 실패하면 null
 async function askJson<T>(system: string, user: string): Promise<T | null> {
   try {
-    const res = await client.messages.create({
+    const res = await getClient().messages.create({
       model: MODEL,
       max_tokens: 2000,
       system,
