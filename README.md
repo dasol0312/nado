@@ -65,8 +65,8 @@ And almost nobody wants to be that someone. Asking first, picking a place, the a
 
 - **You never post an invitation.** You just pick activities and drag over the hours you're free, like When2meet.
 - **Claude opens rooms on its own.** When two or more students want the same activity at overlapping times, Claude creates a room and invites them.
-- **Joining is one tap.** You see an invitation that is already happening. You just say *"nado!"* and you're in the group chat.
-- **Claude handles the awkward parts.** It picks the place, opens the chat with the plan, and gives everyone an easy first question.
+- **Joining is one tap.** You see an invitation that is already happening. You just say *"nado!"* and you're in the room.
+- **Claude handles the awkward parts.** It picks the place, posts the plan, and gives everyone an easy first question. No one has to start a conversation.
 
 ## How It Works
 
@@ -74,10 +74,12 @@ And almost nobody wants to be that someone. Asking first, picking a place, the a
 |---|---|
 | **1. Pick and paint** | Pick an activity (boba, basketball, or type your own), then drag over a weekly grid to paint when you want to do it, like When2meet. *Basketball: Mon and Wed, 9 to 11 PM.* Repeat for each activity. |
 | **2. Claude opens a room** | Claude finds students who want the same activity at overlapping times, and opens a room on its own: *"Boba · Sunday 3:00 PM · Boba Corner · 4 students free"*. |
-| **3. Say "nado!"** | Those students get a notification and join with one tap, the app version of texting back *"나두!"* Saying nado puts you in the room's group chat. Nobody posted it, so nobody is the organizer. |
-| **4. Meet up** | Claude starts the chat with the time, the place, and an icebreaker. At meetup time, everyone's screen turns the same color so you can find each other. |
+| **3. Say "nado!"** | Those students get a notification and join with one tap, the app version of texting back *"나두!"* Nobody posted it, so nobody is the organizer. |
+| **4. Meet up** | The room shows the time, the place, and Claude's icebreaker. Instead of a chat, there are three quick-reply buttons: *👋 I'm here*, *⏰ 5 min late*, *🙏 Can't make it*. At meetup time, everyone's screen turns the same color so you can find each other. |
 
 Your times repeat every week, so you set them once and keep getting invitations.
+
+**Why no chat?** A chat brings back the pressure nado removes: someone still has to speak first, and people judge each other by their messages. Quick replies cover what a meetup actually needs (here, late, can't come), with nothing to write and nothing to moderate.
 
 **Color Match example**
 
@@ -97,7 +99,7 @@ Claude plays two roles: it **understands** what students want, and it **hosts** 
 | Understand | Safety filtering | Drops discriminatory conditions from custom activities, such as "boba, Koreans only" → "boba" |
 | Host | Opening rooms | Spots shared activities and overlapping times, then opens a room with an activity, time, and place |
 | Host | Invitation | Writes the invitation in nado's name and sends it to students who are free |
-| Host | Icebreaker | Posts the first message in the group chat: the plan plus one easy question from what the group has in common |
+| Host | Icebreaker | Posts the plan plus one easy question in the room, based on the activity the group shares |
 
 Claude only ever sees activities and time slots. It never ranks or judges people.
 
@@ -120,7 +122,7 @@ Claude only ever sees activities and time slots. It never ranks or judges people
  │   Next.js app    │ ──────────────────▶ │ Claude API │  opens a room:
  │    (Vercel)      │ ◀────────────────── └────────────┘  activity, time, place,
  └──────────────────┘                                      invitation, icebreaker
-              │ save room, invitations, chat
+              │ save room, invitations, replies
               ▼
  ┌──────────────────┐  real-time   ┌──────────┐   ┌──────────┐
  │     Supabase     │ ───────────▶ │ Phone A  │   │ Phone B  │
@@ -165,7 +167,7 @@ The demo simulates an active campus with **24 sample students**, each with activ
 2. We tap **"Let Claude open rooms"** (the demo's stand-in for Claude checking on a schedule).
 3. Claude opens a room that fits the judge, for example *"Boba · Today 1:00 PM · Boba Corner"*. One sample student typed "bubble tea" instead of "boba", and Claude still puts them in the same room.
 4. The judge's phone and a teammate's phone both get the invitation. Both tap **nado!**
-5. Both land in the group chat, where Claude has posted the plan and an icebreaker. At meetup time, both phones show the same color.
+5. Both land in the room, where Claude has posted the plan and an icebreaker. The judge taps *👋 I'm here* and it appears on the teammate's phone instantly. Tap **"Time to meet!"** and both phones show the same color.
 
 **What's simulated:** sample students, their weekly times, and the list of meeting spots are seeded for the demo. In the real app Claude would check for rooms on a schedule instead of on a button press. There is no live campus user base yet.
 
@@ -174,7 +176,8 @@ The demo simulates an active campus with **24 sample students**, each with activ
 - University email verification *(planned; the demo uses sample students)*
 - Minimal personal information before matching
 - Public meeting locations only
-- Students choose whether to join, every time, and the group chat opens only after you say *nado*
+- Students choose whether to join, every time, and see the room only after they say *nado*
+- No free-text chat, only quick replies, so there are no messages to screen and no one has to break the ice
 - Discriminatory preferences are ignored
 
 ## Roadmap
@@ -182,7 +185,7 @@ The demo simulates an active campus with **24 sample students**, each with activ
 **Hackathon MVP**
 - Activity picker + weekly drag-to-paint time grid
 - Claude opens rooms and invites students who are free
-- One-tap join, group chat with Claude's first message, and the Color Match screen
+- One-tap join, a room with Claude's icebreaker and quick replies, and the Color Match screen
 
 **Next**
 - Claude checks for rooms automatically on a schedule
