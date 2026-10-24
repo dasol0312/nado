@@ -1,6 +1,6 @@
 # nado
 
-> Tell nado what you like and when you're free. Claude opens a room on its own and invites the people who can join, so nobody ever has to ask first.
+> Pick what you want to do and paint the hours you're free. Claude opens a room on its own and invites the people who can join, so nobody ever has to ask first.
 
 **na·do** · */ˈnɑː.doʊ/* · **나도** means ***"me too"*** in Korean, and ***do*** means let's actually do it.
 
@@ -63,19 +63,21 @@ And almost nobody wants to be that someone. Asking first, picking a place, the a
 
 **nado** removes the person who has to ask first. **Claude is the host.**
 
-- **You never post an invitation.** You just tell nado what you like and when you're free.
-- **Claude opens rooms on its own.** When two or more students share an interest and a free time slot, Claude creates a room and invites them.
-- **Joining is one tap.** You see an invitation that is already happening. You just say *"nado!"*
-- **Claude handles the awkward parts.** It picks the place, confirms the meetup, and gives everyone an easy first question.
+- **You never post an invitation.** You just pick activities and drag over the hours you're free, like When2meet.
+- **Claude opens rooms on its own.** When two or more students want the same activity at overlapping times, Claude creates a room and invites them.
+- **Joining is one tap.** You see an invitation that is already happening. You just say *"nado!"* and you're in the group chat.
+- **Claude handles the awkward parts.** It picks the place, opens the chat with the plan, and gives everyone an easy first question.
 
 ## How It Works
 
 | Step | What happens |
 |---|---|
-| **1. Tell nado about you** | Write it like you'd tell a friend: *"I love boba and pickup basketball, free most afternoons."* Claude turns it into interest keywords. Then tap the time slots you're free this week. |
-| **2. Claude opens a room** | Claude finds students whose interests and free times overlap, and opens a room on its own: *"Boba · Today 3:00 PM · Student Union · 3 students free"*. |
-| **3. Say "nado!"** | Those students get a notification and join with one tap, the app version of texting back *"나두!"* Nobody posted it, so nobody is the organizer. |
-| **4. Meet up** | Once at least two join, Claude confirms. Everyone's screen turns the same color, with the meeting spot and an icebreaker question. |
+| **1. Pick and paint** | Pick an activity (boba, basketball, or type your own), then drag over a weekly grid to paint when you want to do it, like When2meet. *Basketball: Mon and Wed, 9 to 11 PM.* Repeat for each activity. |
+| **2. Claude opens a room** | Claude finds students who want the same activity at overlapping times, and opens a room on its own: *"Boba · Sunday 3:00 PM · Boba Corner · 4 students free"*. |
+| **3. Say "nado!"** | Those students get a notification and join with one tap, the app version of texting back *"나두!"* Saying nado puts you in the room's group chat. Nobody posted it, so nobody is the organizer. |
+| **4. Meet up** | Claude starts the chat with the time, the place, and an icebreaker. At meetup time, everyone's screen turns the same color so you can find each other. |
+
+Your times repeat every week, so you set them once and keep getting invitations.
 
 **Color Match example**
 
@@ -83,22 +85,21 @@ And almost nobody wants to be that someone. Asking first, picking a place, the a
 >
 > Icebreaker: *You both love boba. What's your go-to order?*
 
-No phone numbers to swap, no profile photos to search through.
+No phone numbers to swap, no profile photos to search through. Just an activity, a time, and people who said *nado* too.
 
 ## How We Use Claude
 
-Claude plays two roles: it **understands** each student, and it **hosts** the meetup.
+Claude plays two roles: it **understands** what students want, and it **hosts** the meetup.
 
 | Role | Capability | Example |
 |---|---|---|
-| Understand | Interests from natural language | "boba and pickup basketball" → `["boba", "basketball"]` |
-| Understand | Related activities | Knows "boba" and "bubble tea" are the same thing |
-| Understand | Safety filtering | Ignores discriminatory preferences such as "Koreans only" |
-| Host | Opening rooms | Spots shared interests and free times, then opens a room with an activity, time, and place |
+| Understand | Related activities | Puts "bubble tea" with "boba" and "pickup basketball" with "basketball", which exact matching would miss |
+| Understand | Safety filtering | Drops discriminatory conditions from custom activities, such as "boba, Koreans only" → "boba" |
+| Host | Opening rooms | Spots shared activities and overlapping times, then opens a room with an activity, time, and place |
 | Host | Invitation | Writes the invitation in nado's name and sends it to students who are free |
-| Host | Icebreaker | Writes one easy first question from what the group has in common |
+| Host | Icebreaker | Posts the first message in the group chat: the plan plus one easy question from what the group has in common |
 
-Students can review and edit the keywords Claude pulled from their description.
+Claude only ever sees activities and time slots. It never ranks or judges people.
 
 ## Tech Stack
 
@@ -112,14 +113,14 @@ Students can review and edit the keywords Claude pulled from their description.
 ## Architecture
 
 ```
- Students' interests + free times
+ Students' activities + weekly time grid
               │
               ▼
  ┌──────────────────┐   "who overlaps?"   ┌────────────┐
  │   Next.js app    │ ──────────────────▶ │ Claude API │  opens a room:
  │    (Vercel)      │ ◀────────────────── └────────────┘  activity, time, place,
  └──────────────────┘                                      invitation, icebreaker
-              │ save room
+              │ save room, invitations, chat
               ▼
  ┌──────────────────┐  real-time   ┌──────────┐   ┌──────────┐
  │     Supabase     │ ───────────▶ │ Phone A  │   │ Phone B  │
@@ -140,48 +141,49 @@ Students can review and edit the keywords Claude pulled from their description.
    ```bash
    npm install
    ```
-3. Create `.env.local` with your keys (never commit this file)
+3. Set up Supabase: in the SQL Editor, run `supabase/schema.sql`, then `supabase/seed.sql` for sample data
+4. Create `.env.local` with your keys (never commit this file)
    ```
    ANTHROPIC_API_KEY=your_key
    NEXT_PUBLIC_SUPABASE_URL=your_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key
    ```
-4. Run the app
+5. Run the app
    ```bash
    npm run dev
    ```
-5. Open http://localhost:3000 and pick a demo user to sign in as.
+6. Open http://localhost:3000 and pick a demo user to sign in as.
 
 ## Demo
 
-The demo simulates an active campus with **20 to 30 sample students**, each with interests and free times, plus two real phones.
+The demo simulates an active campus with **24 sample students**, each with activities and weekly time slots, plus two real phones.
 
-1. A judge describes themselves in one sentence, and Claude turns it into interest keywords.
+1. A judge picks **boba** and paints Sunday afternoon on the time grid.
 2. We tap **"Let Claude open rooms"** (the demo's stand-in for Claude checking on a schedule).
-3. Claude opens a room that fits the judge, for example *"Boba · 3:00 PM · Student Union"*.
+3. Claude opens a room that fits the judge, for example *"Boba · Today 1:00 PM · Boba Corner"*. One sample student typed "bubble tea" instead of "boba", and Claude still puts them in the same room.
 4. The judge's phone and a teammate's phone both get the invitation. Both tap **nado!**
-5. Claude confirms. Both phones show the same color, the meeting spot, and an icebreaker.
+5. Both land in the group chat, where Claude has posted the plan and an icebreaker. At meetup time, both phones show the same color.
 
-**What's simulated:** sample students, their free times, and the list of meeting spots are seeded for the demo. In the real app Claude would check for rooms on a schedule instead of on a button press. There is no live campus user base yet.
+**What's simulated:** sample students, their weekly times, and the list of meeting spots are seeded for the demo. In the real app Claude would check for rooms on a schedule instead of on a button press. There is no live campus user base yet.
 
 ## Safety and Privacy
 
 - University email verification *(planned; the demo uses sample students)*
 - Minimal personal information before matching
 - Public meeting locations only
-- Students choose whether to join, every time
+- Students choose whether to join, every time, and the group chat opens only after you say *nado*
 - Discriminatory preferences are ignored
 
 ## Roadmap
 
 **Hackathon MVP**
-- Interests in natural language + free-time slots
+- Activity picker + weekly drag-to-paint time grid
 - Claude opens rooms and invites students who are free
-- One-tap join and the Color Match screen with an icebreaker
+- One-tap join, group chat with Claude's first message, and the Color Match screen
 
 **Next**
 - Claude checks for rooms automatically on a schedule
-- Related-activity suggestions when an exact match is missing
+- Type one sentence ("basketball Mon/Wed nights") and Claude pre-paints your grid
 - Reminders, and finding a replacement if someone drops out
 - Private meetup feedback and personal blocking
 - University email verification
