@@ -73,7 +73,7 @@ and privileged room creation.
 
 ## API
 
-- POST /api/claude: opens rooms with lib/nado (the "Let Claude open rooms"
+- POST /api/open-rooms: opens rooms with lib/nado (the "Let Claude open rooms"
   button). Currently returns 501 until connected.
 
 Keep route handlers focused on request validation and responses; put shared

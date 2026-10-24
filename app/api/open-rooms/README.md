@@ -1,4 +1,4 @@
-# POST /api/claude
+# POST /api/open-rooms
 
 Called by the demo's "Let Claude open rooms" button. route.ts returns HTTP 501
 until it is connected to lib/nado/.
