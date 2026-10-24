@@ -1,5 +1,7 @@
 # nado 🟠
 
+**na·do** · */ˈnɑː.doʊ/* · **나도** means ***"me too"*** in Korean, and ***do*** means let's actually do it.
+
 **Do what you want, with someone who wants to do it too.**
 
 *An AI-powered, real-time activity matching platform for university students.*
@@ -7,6 +9,24 @@
 Built at **Cal Hacks 13.0 (2026)**
 
 ---
+
+## 🗣️ What does "nado" mean?
+
+One word, read three ways:
+
+| Read it as | Meaning |
+|---|---|
+| **나도** (nado) | Korean for *"me too."* What you say when a friend mentions something you want to do as well. |
+| **나 + do** | **나** (na) means *"I / me"* in Korean. Put it next to the English *do* and you get *"I'll do it."* |
+| **do** | Not "maybe later." Not "let's plan something." Let's actually do it, right now. |
+
+And when friends text, 나도 often turns into **나두** (nadu), the softer, playful spelling. "나두나두!" means *"Me too, me too!"*
+
+When a friend says *"I'm craving boba,"* the easiest reply in the world is *"나도!"* You don't have to plan anything, lead anything, or be the one who asked. You just say yes.
+
+We're four Korean exchange students, and that one word is exactly what we kept missing. We had things we wanted to do but no one around to say *nado*. So we built the place where someone always can.
+
+> Someone says *"I want to..."* → someone else says *"나도!"* → you meet.
 
 ## 💡 Why nado?
 
@@ -22,7 +42,7 @@ Asking strangers isn't easy either. Posting in group chats can feel awkward, and
 
 **Our insight:**
 
-It's not that nobody wants to join. It's that the people who would say **"Me too!"** never get to see the invitation.
+It's not that nobody wants to join. It's that the people who would say **"나도!" (me too!)** never get to see the invitation.
 
 ## 🚀 What is nado?
 
@@ -40,7 +60,7 @@ Just share what you want to do, find someone interested, and meet up.
 |---|---|
 | **01 · Set Interests** | Choose activities you'd like to be invited to, such as basketball, boba, or hiking. |
 | **02 · Send a Flare** | Type something like "Boba in 10 minutes?" Claude automatically extracts the details. |
-| **03 · Say "nado!"** | Interested students receive a notification and join with one tap. |
+| **03 · Say "nado!"** | Interested students who are open right now receive a notification and join with one tap. It's the app version of texting back "나두!" |
 | **04 · Meet Up** | nado suggests a public meeting spot. Matching screen colors help participants recognize each other. |
 
 ### 🟠 The Color Match
@@ -120,7 +140,7 @@ Not everyone wants to organize a group, message a stranger, or plan days ahead.
 
 Sometimes, they just want to say:
 
-**"nado!" — Me too.**
+**"나도!" — nado. Me too.**
 
 ---
 
