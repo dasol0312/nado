@@ -1,147 +1,208 @@
-# nado 🟠
+# nado
+
+> Tell nado what you like and when you're free. Claude opens a room on its own and invites the people who can join, so nobody ever has to ask first.
 
 **na·do** · */ˈnɑː.doʊ/* · **나도** means ***"me too"*** in Korean, and ***do*** means let's actually do it.
 
-**Do what you want, with someone who wants to do it too.**
+Built at **Cal Hacks 13.0** (October 2026) by four Korean exchange students.
 
-*An AI-powered, real-time activity matching platform for university students.*
-
-Built at **Cal Hacks 13.0 (2026)**
+- **Demo video:** _coming soon_
+- **Live app:** _coming soon_
 
 ---
 
-## 🗣️ What does "nado" mean?
+## Table of Contents
+
+- [What Does "nado" Mean?](#what-does-nado-mean)
+- [The Problem](#the-problem)
+- [Our Solution](#our-solution)
+- [How It Works](#how-it-works)
+- [How We Use Claude](#how-we-use-claude)
+- [Tech Stack](#tech-stack)
+- [Architecture](#architecture)
+- [Getting Started](#getting-started)
+- [Demo](#demo)
+- [Safety and Privacy](#safety-and-privacy)
+- [Roadmap](#roadmap)
+- [Team](#team)
+- [Acknowledgments](#acknowledgments)
+
+---
+
+## What Does "nado" Mean?
 
 One word, read three ways:
 
 | Read it as | Meaning |
 |---|---|
-| **나도** (nado) | Korean for *"me too."* What you say when a friend mentions something you want to do as well. |
-| **나 + do** | **나** (na) means *"I / me"* in Korean. Put it next to the English *do* and you get *"I'll do it."* |
+| **나도** (nado) | Korean for *"me too!"* What you say when a friend mentions something you want to do as well. |
+| **나 + do** | **나** (na) means *"I / me"* in Korean. Next to the English *do*, it becomes *"I'll do it."* |
 | **do** | Not "maybe later." Not "let's plan something." Let's actually do it, right now. |
 
-And when friends text, 나도 often turns into **나두** (nadu), the softer, playful spelling. "나두나두!" means *"Me too, me too!"*
+And when friends text, 나도 softens into **나두** (nadu), the playful spelling. *"나두나두!"* means *"Me too, me too!"*
 
-When a friend says *"I'm craving boba,"* the easiest reply in the world is *"나도!"* You don't have to plan anything, lead anything, or be the one who asked. You just say yes.
+When a friend says *"I'm craving boba,"* the easiest reply in the world is *"나도!"* You don't plan anything, lead anything, or ask first. You just say yes.
 
-We're four Korean exchange students, and that one word is exactly what we kept missing. We had things we wanted to do but no one around to say *nado*. So we built the place where someone always can.
+That one word is exactly what we kept missing as exchange students: things we wanted to do, and no one around to say *nado*. So we built the place where someone always can.
 
-> Someone says *"I want to..."* → someone else says *"나도!"* → you meet.
-
-## 💡 Why nado?
-
-> **"I want to do something right now, but I have no one to do it with."**
-
-As exchange students, we've all experienced this:
-
-- 🏀 You want to play basketball, but your friends are busy.
-- 🎭 You want to see a musical, but nobody shares your interest.
-- 🧋 You have some free time and want someone to grab boba with.
-
-Asking strangers isn't easy either. Posting in group chats can feel awkward, and organizing a meetup takes effort.
-
-**Our insight:**
-
-It's not that nobody wants to join. It's that the people who would say **"나도!" (me too!)** never get to see the invitation.
-
-## 🚀 What is nado?
-
-**nado** connects university students who want to do the same activity at the same time.
-
-No endless profile browsing. No awkward group chats. No complicated planning.
-
-Just share what you want to do, find someone interested, and meet up.
-
-**Activities first. People second.**
-
-## 📱 How It Works
-
-| Step | Experience |
-|---|---|
-| **01 · Set Interests** | Choose activities you'd like to be invited to, such as basketball, boba, or hiking. |
-| **02 · Send a Flare** | Type something like "Boba in 10 minutes?" Claude automatically extracts the details. |
-| **03 · Say "nado!"** | Interested students who are open right now receive a notification and join with one tap. It's the app version of texting back "나두!" |
-| **04 · Meet Up** | nado suggests a public meeting spot. Matching screen colors help participants recognize each other. |
-
-### 🟠 The Color Match
-
-Once a meetup is confirmed, participants receive the same screen color.
-
-> 🟠 **Meet at the first-floor lobby at 3:10 PM.**
->
-> Look for someone holding an orange screen!
-
-No need to exchange phone numbers or search through profile pictures.
-
-## ✨ Key Features
-
-| Feature | Description |
-|---|---|
-| ⚡ **Real-Time Matching** | Connect with students who are available and interested right now. |
-| 🎯 **Interest-Based Notifications** | Get invited to activities you've expressed interest in. |
-| 🤖 **AI-Powered Matching** | Understand natural-language requests and recognize related activities. |
-| 🟠 **Color Match** | Identify your meetup partners using a shared screen color. |
-| 🔄 **Smart Alternatives** | Discover similar activities when no exact match is available. |
-| 🔒 **Privacy & Safety** | University email verification, activity-first matching, public locations, and reporting. |
-
-## 🤖 How We Use Claude
-
-Claude helps turn spontaneous ideas into real-world meetups.
-
-| Capability | Example |
-|---|---|
-| **Natural Language Parsing** | "Boba in 10 min" → Boba · 10 minutes from now |
-| **Semantic Understanding** | Recognizes that "boba" and "bubble tea" refer to similar activities |
-| **Alternative Suggestions** | No basketball match? Suggest a related gym activity |
-| **Meetup Coordination** | Suggests a convenient public meeting location |
-| **Safety Filtering** | Identifies and excludes discriminatory or inappropriate matching conditions |
-
-Users can review and correct AI-interpreted details before sending a Flare.
-
-## 🛡️ Safety & User Control
-
-We want meeting new people to feel more approachable while respecting user privacy and choice.
-
-**Core design principles**
-- University email verification
-- Minimal personal information before matching
-- Public meeting locations
-- User-controlled participation
-- Reporting inappropriate behavior
-
-### Planned Features
-
-- 🌡️ **Meetup Feedback:** Optional, private feedback about the meetup experience rather than public ratings of individuals.
-- 🚫 **Personal Blocking:** Privately exclude specific users from future matches.
-
-These features are being explored and are not necessarily part of the hackathon prototype.
-
-## 🎬 Hackathon Demo
-
-Our demo simulates an active campus community using **20–30 sample user profiles**, including a real teammate's device.
-
-1. **Create:** A judge sends a Flare — "Anyone want boba in 10 minutes?"
-2. **Interpret:** Claude extracts and structures the request.
-3. **Match:** The system finds interested users.
-4. **Notify:** A teammate receives an invitation and taps "nado!"
-5. **Meet:** Both devices display the same color and meeting location.
-
-**Additional scenarios**
-- No exact match → AI suggests a related activity.
-- Discriminatory request → AI excludes the inappropriate condition.
-
-*Sample profiles are used for demonstration purposes; the demo does not imply an existing live campus user base.*
-
-## 🌍 Our Vision
-
-We believe meaningful connections can start with something as simple as a shared activity.
-
-Not everyone wants to organize a group, message a stranger, or plan days ahead.
-
-Sometimes, they just want to say:
-
-**"나도!" — nado. Me too.**
+> Claude says *"Boba at 3, anyone?"* → you say **"나도!"** → you meet.
 
 ---
 
-**nado · Cal Hacks 13.0 · 2026**
+## The Problem
+
+**"I want to do something right now, but I have no one to do it with."**
+
+As exchange students, we all lived this. You want to play basketball, but your friends are busy. You want to see a musical, but no one shares the interest. You have a free hour and want someone to grab boba with.
+
+It's not that nobody wants to join. The people who would say *"나도!"* (me too!) never see an invitation, because someone has to send it first.
+
+And almost nobody wants to be that someone. Asking first, picking a place, the awkward wait if no one shows up, breaking the ice. For shy students far from home, that pressure is often enough to just stay in.
+
+## Our Solution
+
+**nado** removes the person who has to ask first. **Claude is the host.**
+
+- **You never post an invitation.** You just tell nado what you like and when you're free.
+- **Claude opens rooms on its own.** When two or more students share an interest and a free time slot, Claude creates a room and invites them.
+- **Joining is one tap.** You see an invitation that is already happening. You just say *"nado!"*
+- **Claude handles the awkward parts.** It picks the place, confirms the meetup, and gives everyone an easy first question.
+
+## How It Works
+
+| Step | What happens |
+|---|---|
+| **1. Tell nado about you** | Write it like you'd tell a friend: *"I love boba and pickup basketball, free most afternoons."* Claude turns it into interest keywords. Then tap the time slots you're free this week. |
+| **2. Claude opens a room** | Claude finds students whose interests and free times overlap, and opens a room on its own: *"Boba · Today 3:00 PM · Student Union · 3 students free"*. |
+| **3. Say "nado!"** | Those students get a notification and join with one tap, the app version of texting back *"나두!"* Nobody posted it, so nobody is the organizer. |
+| **4. Meet up** | Once at least two join, Claude confirms. Everyone's screen turns the same color, with the meeting spot and an icebreaker question. |
+
+**Color Match example**
+
+> 🟠 Meet at the Student Union lobby at 3:00 PM. Look for someone holding an orange screen!
+>
+> Icebreaker: *You both love boba. What's your go-to order?*
+
+No phone numbers to swap, no profile photos to search through.
+
+## How We Use Claude
+
+Claude plays two roles: it **understands** each student, and it **hosts** the meetup.
+
+| Role | Capability | Example |
+|---|---|---|
+| Understand | Interests from natural language | "boba and pickup basketball" → `["boba", "basketball"]` |
+| Understand | Related activities | Knows "boba" and "bubble tea" are the same thing |
+| Understand | Safety filtering | Ignores discriminatory preferences such as "Koreans only" |
+| Host | Opening rooms | Spots shared interests and free times, then opens a room with an activity, time, and place |
+| Host | Invitation | Writes the invitation in nado's name and sends it to students who are free |
+| Host | Icebreaker | Writes one easy first question from what the group has in common |
+
+Students can review and edit the keywords Claude pulled from their description.
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend and API | [Next.js](https://nextjs.org) |
+| Database and real-time | [Supabase](https://supabase.com) |
+| AI | [Claude API](https://docs.claude.com) (Anthropic) |
+| Hosting | [Vercel](https://vercel.com) |
+
+## Architecture
+
+```
+ Students' interests + free times
+              │
+              ▼
+ ┌──────────────────┐   "who overlaps?"   ┌────────────┐
+ │   Next.js app    │ ──────────────────▶ │ Claude API │  opens a room:
+ │    (Vercel)      │ ◀────────────────── └────────────┘  activity, time, place,
+ └──────────────────┘                                      invitation, icebreaker
+              │ save room
+              ▼
+ ┌──────────────────┐  real-time   ┌──────────┐   ┌──────────┐
+ │     Supabase     │ ───────────▶ │ Phone A  │   │ Phone B  │
+ │  DB + Realtime   │ ───────────────────────────▶│ "nado!"  │
+ └──────────────────┘              └──────────┘   └──────────┘
+```
+
+## Getting Started
+
+> Setup steps will be finalized as we build.
+
+1. Clone the repository
+   ```bash
+   git clone https://github.com/dasol0312/nado.git
+   cd nado
+   ```
+2. Install dependencies
+   ```bash
+   npm install
+   ```
+3. Create `.env.local` with your keys (never commit this file)
+   ```
+   ANTHROPIC_API_KEY=your_key
+   NEXT_PUBLIC_SUPABASE_URL=your_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key
+   ```
+4. Run the app
+   ```bash
+   npm run dev
+   ```
+5. Open http://localhost:3000 and pick a demo user to sign in as.
+
+## Demo
+
+The demo simulates an active campus with **20 to 30 sample students**, each with interests and free times, plus two real phones.
+
+1. A judge describes themselves in one sentence, and Claude turns it into interest keywords.
+2. We tap **"Let Claude open rooms"** (the demo's stand-in for Claude checking on a schedule).
+3. Claude opens a room that fits the judge, for example *"Boba · 3:00 PM · Student Union"*.
+4. The judge's phone and a teammate's phone both get the invitation. Both tap **nado!**
+5. Claude confirms. Both phones show the same color, the meeting spot, and an icebreaker.
+
+**What's simulated:** sample students, their free times, and the list of meeting spots are seeded for the demo. In the real app Claude would check for rooms on a schedule instead of on a button press. There is no live campus user base yet.
+
+## Safety and Privacy
+
+- University email verification *(planned; the demo uses sample students)*
+- Minimal personal information before matching
+- Public meeting locations only
+- Students choose whether to join, every time
+- Discriminatory preferences are ignored
+
+## Roadmap
+
+**Hackathon MVP**
+- Interests in natural language + free-time slots
+- Claude opens rooms and invites students who are free
+- One-tap join and the Color Match screen with an icebreaker
+
+**Next**
+- Claude checks for rooms automatically on a schedule
+- Related-activity suggestions when an exact match is missing
+- Reminders, and finding a replacement if someone drops out
+- Private meetup feedback and personal blocking
+- University email verification
+
+## Team
+
+We're four Korean exchange students who kept wishing someone nearby would say *"나도!"*
+
+| Name | Role |
+|---|---|
+| _name_ | _role_ |
+| _name_ | _role_ |
+| _name_ | _role_ |
+| _name_ | _role_ |
+
+## Acknowledgments
+
+- Built at **Cal Hacks 13.0**, San Francisco, October 2026
+- AI tools: Claude API, and Claude Code for development
+- Planning guided by [calhacks-kit](https://github.com/georgeykalangi/calhacks-kit)
+
+---
+
+*Nobody has to ask first. Claude is the host. You just say* **"나도!" — nado. Me too.**
