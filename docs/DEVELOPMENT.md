@@ -45,8 +45,8 @@ Rotate the API keys after the hackathon.
 
 ### Matching (`/api/match`, `lib/server/match.ts`)
 
-Runs every 5 minutes (Supabase pg_cron → GET), on "Check again now", after a
-profile change, when a room opens, and after a group dissolves (POST).
+Runs every minute (Supabase pg_cron → GET; the app also runs it at the top of each
+minute and shows a countdown on Right now), after a profile change, when a room opens, and after a group dissolves (POST).
 
 1. DB function `build_activity_slots()`: everyone's free time in the next 4 hours
    × their interests, minus busy blocks and rooms they're in → `activity_slots`
@@ -83,7 +83,7 @@ error codes and prompts: docs/HANDOFF-yerin.md.
 - app/: pages and API route handlers.
   - `/login` (NYU email + code, or Judge mode). New students land on `/profile`
   - `(tabs)/`: `/matches`, `/groups`, `/profile` share the tab bar and run
-    matching in the background (every 5 minutes)
+    matching in the background (every minute)
   - `/rooms/[roomId]`: meeting spot map, group, 30-minute reminder
   - `/rooms/[roomId]/find`: outfit hints, glow screen, icebreaker
 - components/: UI by screen (shell, auth, schedule, interests, matches, groups,

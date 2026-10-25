@@ -8,10 +8,11 @@ import { campusClock, DAY_SHORT } from "@/lib/time";
 import { useApp } from "../shell/AppProvider";
 import ClockSheet from "../shell/ClockSheet";
 import { Mascot } from "../shell/icons";
+import NextCheck from "./NextCheck";
 import PlanCard from "./PlanCard";
 
 export default function MatchesView() {
-  const { now, clock, plans, plansReady, matching, runMatch, notifOn, setNotifOn, toast } = useApp();
+  const { now, clock, plans, plansReady, notifOn, setNotifOn, toast } = useApp();
   const [hash, setHash] = useState("");
   // Easter egg: tap the clock 5 times quickly to set the demo date and time
   const [clockOpen, setClockOpen] = useState(false);
@@ -59,9 +60,7 @@ export default function MatchesView() {
           <span />
         </label>
       </div>
-      <button className="btn soft sm" disabled={matching} onClick={() => runMatch({ title: "A plan fits the next few hours" })}>
-        {matching ? <span className="matching"><span className="spinner" />Claude is looking for plans…</span> : "Check again now (runs every 5 min)"}
-      </button>
+      <NextCheck />
       <div className="section-h"><h2>Next 4 hours</h2><span className="small muted">{list.length} plan{list.length === 1 ? "" : "s"}</span></div>
       {!plansReady ? (
         <div className="empty"><span className="spinner" /></div>

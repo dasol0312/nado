@@ -1,11 +1,13 @@
 "use client";
 
-// Matching runs on arrival and every 5 minutes (each run asks Claude twice, so not more often).
-// The demo clock and "Check again now" run it too.
+// Matching runs on arrival and at the top of every minute, the same beat as the DB timer
+// (pg_cron, every minute). The countdown on Right now (NextCheck) counts down to the same moment.
 import { useEffect } from "react";
 import { useApp } from "../shell/AppProvider";
 
-const EVERY = 5 * 60_000;
+export const EVERY = 60_000;
+// ms until the next whole minute
+export const msToNextCheck = (t = Date.now()) => EVERY - (t % EVERY);
 
 export default function AutoMatch() {
   const { profile, runMatch } = useApp();
@@ -17,9 +19,15 @@ export default function AutoMatch() {
     try {
       last = Number(sessionStorage.getItem("nado:lastMatch") ?? 0);
     } catch {}
-    const first = setTimeout(() => runMatch({ quietIfNone: true }), Date.now() - last > EVERY ? 600 : EVERY - (Date.now() - last));
-    const every = setInterval(() => runMatch({ quietIfNone: true }), EVERY);
+    const run = () => runMatch({ quietIfNone: true });
+    const arrive = Date.now() - last > EVERY ? setTimeout(run, 600) : undefined;
+    let every: ReturnType<typeof setInterval> | undefined;
+    const first = setTimeout(() => {
+      run();
+      every = setInterval(run, EVERY);
+    }, msToNextCheck());
     return () => {
+      clearTimeout(arrive);
       clearTimeout(first);
       clearInterval(every);
     };
