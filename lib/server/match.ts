@@ -15,6 +15,7 @@ import "server-only";
 import { openRooms, type Place, type Slot } from "@/lib/nado/matching";
 import { choosePlaces, writePlans, type PlacePair } from "@/lib/nado/plan";
 import { selectAll, type Db } from "@/lib/server/api";
+import { KEEP_DAYS } from "@/lib/plan-lists";
 import { settleRoom } from "@/lib/server/rooms";
 import { addDays, campusInstant, campusToday, dayOfWeek } from "@/lib/time";
 
@@ -43,6 +44,12 @@ export async function runMatch(sb: Db, opts: MatchOptions = {}) {
   if (Number.isNaN(at.getTime())) throw new Error("now must be an ISO timestamp.");
   const { date, time } = campusToday(at);
   const day = dayOfWeek(date);
+
+  // 끝난 지 30일 넘은 방은 지움 (채팅, 멤버도 같이). 데모 시계가 아니라 실제 시간 기준 (lib/plan-lists KEEP_DAYS)
+  if (!opts.dryRun) {
+    const old = await sb.from("rooms").delete().lt("ends_at", new Date(Date.now() - KEEP_DAYS * 24 * 3_600_000).toISOString());
+    if (old.error) throw new Error(old.error.message);
+  }
 
   // 확정 마감이 지난 열린 플랜 정리: 최소 인원이면 방 열기, 아니면 해산 (응답 안 한 사람은 declined)
   // → 응답 안 한 사람의 그 시간이 다시 비고, 초대 3개 제한에서도 빠짐

@@ -22,12 +22,15 @@ export function activeGroups(plans: Plan[], now: Date) {
   );
 }
 
-// Rooms that happened (ended) or dissolved, newest first
-export function pastGroups(plans: Plan[], now: Date, limit = 3) {
+// How long finished plans stay visible. Older ones are deleted by the matcher (lib/server/match.ts).
+export const KEEP_DAYS = 30;
+
+// Rooms that happened (ended) or dissolved in the past month, newest first
+export function pastGroups(plans: Plan[], now: Date) {
   const t = now.getTime();
+  const since = t - KEEP_DAYS * 24 * 3_600_000;
   return plans
-    .filter((p) => mine(p) || p.myStatus === "cancelled")
-    .filter((p) => (p.status === "cancelled" && p.myStatus !== "cancelled") || (p.status === "confirmed" && p.endsAt <= t && mine(p)))
-    .sort((a, b) => b.startsAt - a.startsAt)
-    .slice(0, limit);
+    .filter((p) => (p.status === "cancelled" && mine(p)) || (p.status === "confirmed" && p.endsAt <= t && mine(p)))
+    .filter((p) => p.startsAt >= since)
+    .sort((a, b) => b.startsAt - a.startsAt);
 }

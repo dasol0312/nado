@@ -46,3 +46,13 @@ test("groups drop out once they start (still waiting) or end (room open), and en
   assert.deepEqual(activeGroups(plans, now).map((p) => p.id), ["room-running"]);
   assert.deepEqual(pastGroups(plans, now).map((p) => p.id), ["dissolved", "room-ended"]);
 });
+
+test("past groups keep the last 30 days only", () => {
+  const day = 24 * 60;
+  const plans = [
+    plan("yesterday", -day, "confirmed", "confirmed"),
+    plan("four-weeks", -28 * day, "confirmed", "confirmed"),
+    plan("five-weeks", -35 * day, "confirmed", "confirmed"),
+  ];
+  assert.deepEqual(pastGroups(plans, now).map((p) => p.id), ["yesterday", "four-weeks"]);
+});

@@ -42,7 +42,7 @@ export default function GroupsView() {
       )}
       {past.length > 0 && (
         <>
-          <div className="section-h"><h2>Past groups</h2></div>
+          <div className="section-h"><h2>Past month</h2></div>
           {past.map((p) => (
             <article key={p.id} className="card rec" style={{ opacity: 0.75 }}>
               <div className="top">
