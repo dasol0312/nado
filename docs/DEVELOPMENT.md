@@ -60,7 +60,7 @@ just to reserve directory names.
 
 Schema v3 and sample data are already installed in the team's Supabase project.
 Tables: students, activity_slots, places, rooms, room_members, messages.
-Weekly activity times use campus local time (America/Los_Angeles); day 0 is
+Weekly activity times use campus local time (America/New_York); day 0 is
 Sunday. Room starts_at is an absolute timestamp. A null messages.student_id
 represents a Claude message.
 

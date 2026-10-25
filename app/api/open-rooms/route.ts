@@ -16,7 +16,7 @@ import { NextResponse } from "next/server";
 import { PRESET_ACTIVITIES } from "@/lib/activities";
 import { openRoomsWithClaude } from "@/lib/nado/claude";
 import type { Slot } from "@/lib/nado/matching";
-import { fail, type Db } from "@/lib/server/api";
+import { fail, selectAll, type Db } from "@/lib/server/api";
 import { createClient } from "@/lib/supabase/server";
 import { addDays, campusInstant, campusToday, dayOfWeek, isDate, weekStartOf } from "@/lib/time";
 
@@ -66,22 +66,26 @@ export async function POST(req: Request) {
       if (removed.error) throw new Error(removed.error.message);
     }
 
-    const [slotsRes, placesRes, busy] = await Promise.all([
-      // This week's saved rows (any day) plus every-week rows for this weekday
-      sb
-        .from("activity_slots")
-        .select("student_id, activity, day_of_week, start_time, end_time, week_start")
-        .or(`week_start.eq.${week},and(week_start.is.null,day_of_week.eq.${day})`),
+    const [slotRows, placesRes, busy] = await Promise.all([
+      // This week's saved rows (any day) plus every-week rows for this weekday.
+      // 800 students easily pass Supabase's 1,000-row limit, so read every page.
+      selectAll((from, to) =>
+        sb
+          .from("activity_slots")
+          .select("id, student_id, activity, day_of_week, start_time, end_time, week_start")
+          .or(`week_start.eq.${week},and(week_start.is.null,day_of_week.eq.${day})`)
+          .order("id")
+          .range(from, to),
+      ),
       sb.from("places").select("id, name, good_for"),
       studentsWithRoomsOn(sb, date),
     ]);
-    if (slotsRes.error) throw new Error(slotsRes.error.message);
     if (placesRes.error) throw new Error(placesRes.error.message);
     if (!placesRes.data.length) return fail(500, "NO_PLACES", "Add meeting places first.");
 
     // A week saved for (student, activity) replaces that pair's every-week times.
-    const savedThisWeek = new Set(slotsRes.data.filter((s) => s.week_start).map((s) => `${s.student_id}|${s.activity}`));
-    const slots: Slot[] = slotsRes.data
+    const savedThisWeek = new Set(slotRows.filter((s) => s.week_start).map((s) => `${s.student_id}|${s.activity}`));
+    const slots: Slot[] = slotRows
       .filter((s) => s.day_of_week === day && !busy.has(s.student_id))
       .filter((s) => s.week_start || !savedThisWeek.has(`${s.student_id}|${s.activity}`))
       .map((s) => ({

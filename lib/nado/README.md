@@ -34,7 +34,7 @@ npx tsx --env-file=.env.local lib/nado/try-claude.ts    # 진짜 Claude로 전�
 1. Supabase에서 `activity_slots`, `places` 읽기
 2. `Slot` 모양으로 바꾸기: `{ studentId, activity, day: day_of_week, start: "HH:MM", end: "HH:MM" }`
    (`start_time`이 `"21:00:00"`으로 오면 앞 5글자만)
-3. `now`: 캠퍼스 현지 시간(America/Los_Angeles) 기준 `{ day: 0~6, time: "HH:MM" }`
+3. `now`: 캠퍼스 현지 시간(America/New_York) 기준 `{ day: 0~6, time: "HH:MM" }`
 4. `await openRoomsWithClaude({ slots, places, now, presets: ["boba", "basketball", ...] })`
 5. 결과 `rooms`마다:
    - `rooms` 테이블에 insert (`starts_at` = 오늘 날짜 + `start`, `place_id`는 이름으로 찾기)

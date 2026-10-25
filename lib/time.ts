@@ -1,6 +1,6 @@
 // Campus local time helpers. Slots and dates are in campus time.
 // Dates are "YYYY-MM-DD" strings; weeks start on Sunday.
-export const CAMPUS_TZ = "America/Los_Angeles";
+export const CAMPUS_TZ = "America/New_York"; // NYU
 
 export const DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -43,7 +43,7 @@ export const weekStartOf = (date: string) => addDays(date, -dayOfWeek(date));
 export const isDate = (v: unknown): v is string =>
   typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) && addDays(v, 0) === v;
 
-// Campus UTC offset in minutes at a moment, e.g. -420 for PDT
+// Campus UTC offset in minutes at a moment, e.g. -240 for EDT
 function offsetMinutes(at: Date) {
   const name = new Intl.DateTimeFormat("en-US", { timeZone: CAMPUS_TZ, timeZoneName: "longOffset" })
     .formatToParts(at)
