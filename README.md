@@ -241,7 +241,7 @@ ANTHROPIC_API_KEY=...
 ANTHROPIC_WORKSPACE_ID=...   # only if your key isn't tied to a workspace
 ```
 
-- **Database:** with your own empty Supabase project, run `supabase/schema.sql`, then `supabase/seed.sql`. (On the team project, don't: they reset existing data.)
+- **Database:** with your own empty Supabase project, run `supabase/schema.sql`, the two files in `supabase/migrations/`, then `npm run seed:students`. (On the team project, don't run schema.sql: it resets existing data.)
 - **Tests:** `npx tsx lib/nado/matching.test.ts` (no API key needed)
 
 ## Demo: What's Real and What's Simulated

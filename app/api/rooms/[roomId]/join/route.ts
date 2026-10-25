@@ -1,59 +1,24 @@
-import { NextResponse } from "next/server";
-import { fail, isUuid, membership } from "@/lib/server/api";
-import { createClient } from "@/lib/supabase/server";
+import { changeMyStatus } from "@/lib/server/rooms";
 
-// A student says "nado!" to an invitation.
-// Body: { studentId }. The first person to join gets Claude's icebreaker posted
-// in the room; once two people have joined, the room is confirmed.
-export async function POST(req: Request, ctx: { params: Promise<{ roomId: string }> }) {
-  const { roomId } = await ctx.params;
-  const body = await req.json().catch(() => null);
-  const studentId = body?.studentId;
-  if (!isUuid(roomId) || !isUuid(studentId)) return fail(400, "BAD_REQUEST", "Valid roomId and studentId are required.");
-
-  const sb = await createClient();
-  try {
-    const status = await membership(sb, roomId, studentId);
-    if (!status) return fail(404, "NOT_INVITED", "This student was not invited to this room.");
-
-    if (status !== "joined") {
-      const joined = await sb
-        .from("room_members")
-        .update({ status: "joined", responded_at: new Date().toISOString() })
-        .eq("room_id", roomId)
-        .eq("student_id", studentId);
-      if (joined.error) throw new Error(joined.error.message);
-    }
-
-    // Claude's first message (student_id null), posted once
-    const claudeMessages = await sb
-      .from("messages")
-      .select("id", { count: "exact", head: true })
-      .eq("room_id", roomId)
-      .is("student_id", null);
-    if (claudeMessages.error) throw new Error(claudeMessages.error.message);
-    if (!claudeMessages.count) {
-      const room = await sb.from("rooms").select("icebreaker").eq("id", roomId).single();
-      if (room.error) throw new Error(room.error.message);
-      if (room.data.icebreaker) {
-        const posted = await sb.from("messages").insert({ room_id: roomId, student_id: null, content: room.data.icebreaker });
-        if (posted.error) throw new Error(posted.error.message);
-      }
-    }
-
-    const joinedCount = await sb
+// "Nado!" on a plan. The group then confirms; the room opens once everyone has.
+// Demo: sample students in the group say nado at the same moment (they confirm one by one
+// through /api/demo/sample-confirm).
+export async function POST(_req: Request, ctx: { params: Promise<{ roomId: string }> }) {
+  return changeMyStatus(ctx, ["invited"], "joined", async (sb, roomId) => {
+    // Only this room's members (a list of all 800 sample ids would overflow the request URL)
+    const waiting = await sb
       .from("room_members")
-      .select("student_id", { count: "exact", head: true })
+      .select("student_id, students!inner(is_sample)")
       .eq("room_id", roomId)
-      .eq("status", "joined");
-    if (joinedCount.error) throw new Error(joinedCount.error.message);
-    if ((joinedCount.count ?? 0) >= 2) {
-      const confirmed = await sb.from("rooms").update({ status: "confirmed" }).eq("id", roomId).eq("status", "open");
-      if (confirmed.error) throw new Error(confirmed.error.message);
-    }
-
-    return NextResponse.json({ ok: true, joined: joinedCount.count ?? 0 });
-  } catch (e) {
-    return fail(500, "DB_ERROR", (e as Error).message);
-  }
+      .eq("status", "invited")
+      .eq("students.is_sample", true);
+    if (waiting.error) throw new Error(waiting.error.message);
+    if (!waiting.data.length) return;
+    const res = await sb
+      .from("room_members")
+      .update({ status: "joined", responded_at: new Date().toISOString() })
+      .eq("room_id", roomId)
+      .in("student_id", waiting.data.map((m) => m.student_id));
+    if (res.error) throw new Error(res.error.message);
+  });
 }

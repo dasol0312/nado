@@ -6,8 +6,7 @@ The team project `nado` is already set up with everything below. Don't re-run th
 
 1. `schema.sql`: tables (drops everything first)
 2. `migrations/20261025_match_helpers.sql` and `migrations/20261025_match_timer.sql`: DB functions (safe to re-run)
-3. `seed.sql`: empties all tables and adds the 16 preset activities
-4. `npm run seed:students`: 800 virtual NYU students (schedules + interests), from `scripts/generate-students.ts`
+3. `npm run seed:students`: the 16 preset activities and 800 virtual NYU students (schedules + interests), from `scripts/generate-students.ts`
 
 `places` starts empty on purpose: Claude picks the meeting spot and venue for each activity when a plan opens, and saves them there.
 

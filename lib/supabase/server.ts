@@ -14,7 +14,8 @@ export async function createClient() {
         try {
           cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
         } catch {
-          // Server Components cannot write cookies. Auth refresh belongs in a future proxy.
+          // Server Components can't write cookies. nado's own session cookie
+          // (lib/server/session.ts) is what decides who is signed in.
         }
       },
     },
