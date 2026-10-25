@@ -1,13 +1,4 @@
-// Preset activities students can pick. Claude maps custom names onto these.
-export const PRESET_ACTIVITIES = [
-  "boba",
-  "basketball",
-  "hiking",
-  "musicals",
-  "baseball",
-  "coffee",
-  "board games",
-  "soccer",
-  "karaoke",
-  "study",
-];
+// Preset activities. Claude maps custom names onto these (app/api/open-rooms imports this name).
+import { CATALOG } from "./catalog";
+
+export const PRESET_ACTIVITIES = CATALOG.map((a) => a.name);
