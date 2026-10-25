@@ -66,17 +66,16 @@ export default function RoomView({ roomId }: { roomId: string }) {
   const same = !dest || meet?.key === dest.key;
   const ready = step >= THINKING.length;
 
-  async function cancel(path: string, mine: boolean) {
+  async function leave() {
     setBusy(true);
     try {
-      const res = await act(path, mine ? undefined : { roomId });
+      const res = await act(`/api/rooms/${roomId}/cancel`);
+      router.push("/groups");
       if (res.roomStatus === "cancelled") {
-        toast(`${mine ? "You left" : `${res.nickname} cancelled`}. Below the minimum, so the room dissolved. Rematching that hour`);
-        router.push("/groups");
+        toast("You left. Below the minimum, so the room dissolved. Rematching that hour");
         setTimeout(() => runMatch({ title: "Rematched: a new team for the same hour" }), 1800);
       } else {
-        toast(mine ? "You left the group" : `${res.nickname} cancelled. Still ${plan!.members.length - 1} (min ${plan!.minSize})`);
-        if (mine) router.push("/groups");
+        toast("You left the group");
       }
     } catch (e) {
       toast((e as Error).message);
@@ -140,7 +139,7 @@ export default function RoomView({ roomId }: { roomId: string }) {
       <QuickReplies roomId={roomId} members={plan.members} />
 
       <Link className="btn block" href={`/rooms/${roomId}/find`}>Share your outfit</Link>
-      <button className="btn ghost sm" disabled={busy} onClick={() => cancel(`/api/rooms/${roomId}/cancel`, true)}>I can’t make it</button>
+      <button className="btn ghost sm" disabled={busy} onClick={leave}>I can’t make it</button>
     </>
   );
 }

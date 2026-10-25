@@ -1,8 +1,8 @@
 // /api/match — 매칭 한 번 돌리기 (lib/server/match.ts)
 //
-// POST  앱에서 부름: 매 분 정각(열려 있는 동안), "Check again now" 버튼
+// POST  앱에서 부름: 매 분 정각(열려 있는 동안), 해산 후 재매칭, 숨은 데모 시계를 바꿀 때
 //   body (모두 선택): { now?: "2026-10-26T15:20:00-04:00", dryRun?: true, force?: true }
-//   한 분에 한 번만 돈다. force 면 그 확인을 건너뜀 (버튼)
+//   한 분에 한 번만 돈다. force 면 그 확인을 건너뜀 (데모 시계 변경)
 //   now 를 안 주면 데모 시계(app_clock) 기준 지금. dryRun 이면 DB에 방을 쓰지 않고 결과만 보여줌
 // GET   1분 타이머(Supabase pg_cron, 매 분 00초)가 부름. CRON_SECRET 이 설정돼 있으면
 //   Authorization: Bearer <CRON_SECRET> 헤더가 있어야 함

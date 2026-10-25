@@ -136,9 +136,6 @@ p{margin:0}
 .upload{display:flex;gap:12px;align-items:center;border:1.5px dashed var(--accent);border-radius:16px;padding:14px;background:var(--accent-soft);cursor:pointer;position:relative}
 .upload input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
 .upload svg{width:28px;height:28px;flex:none;color:var(--accent)}
-.classlist{display:flex;flex-direction:column;gap:4px;font-size:12.5px}
-.classlist div{display:flex;justify-content:space-between;gap:8px}
-.classlist b{font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .spinner{width:16px;height:16px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:spin .8s linear infinite;flex:none}
 @keyframes spin{to{transform:rotate(360deg)}}
 
@@ -213,8 +210,6 @@ p{margin:0}
 .route .dotm{width:14px;height:14px;border-radius:50%;background:var(--accent);margin-top:3px}
 .route .doto{width:14px;height:14px;border-radius:50%;border:2.5px solid var(--accent);margin-top:3px}
 .route .line{width:2px;height:14px;margin-left:6px;background:repeating-linear-gradient(var(--accent) 0 3px,transparent 3px 6px)}
-.demo-act{border:1px dashed var(--line);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px}
-.demo-act .eyebrow{color:var(--amber)}
 
 .optgrid{display:flex;flex-wrap:wrap;gap:6px}
 .swatch{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);padding:0}

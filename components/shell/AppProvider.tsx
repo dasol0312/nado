@@ -323,6 +323,4 @@ export default function AppProvider({ me, children }: { me: Me | null; children:
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 
-// A plan's group size counting everyone still in
-export const planSize = (p: Plan) => p.members.length;
 export const confirmedCount = (p: Plan) => p.members.filter((m) => m.status === "confirmed").length;

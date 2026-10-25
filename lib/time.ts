@@ -84,8 +84,6 @@ export const toMinutes = (t: string) => {
   const [h, m] = t.split(":").map(Number);
   return h * 60 + (m || 0);
 };
-// minutes -> "HH:MM"
-export const minutesToHHMM = (m: number) => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
 
 const h12 = (h: number) => ((h + 11) % 12) + 1;
 const half = (h: number) => (h % 24 < 12 ? "am" : "pm");
