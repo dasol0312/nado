@@ -11,7 +11,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { Outfit } from "@/types/database";
 import MemberChips from "../room/MemberChips";
 import { useApp } from "../shell/AppProvider";
-import { BackIcon, Mascot } from "../shell/icons";
+import { BackIcon, HomeIcon, Mascot } from "../shell/icons";
 import GlowScreen from "./GlowScreen";
 
 type Phase = "outfit" | "hunt" | "glow" | "done";
@@ -200,7 +200,10 @@ export default function FindFlow({ roomId }: { roomId: string }) {
         <p className="hint" style={{ fontSize: 21 }}>{question}</p>
         <button className="btn soft sm" disabled={qBusy} onClick={another}>{qBusy ? <><span className="spinner" /> Thinking</> : "Another question"}</button>
       </div>
-      <Link className="btn ghost block" href={`/rooms/${roomId}`}>Back to room</Link>
+      <div className="stack" style={{ gap: 6, alignItems: "center", marginTop: 4 }}>
+        <Link className="btn block" href="/matches"><HomeIcon />Back to home</Link>
+        <p className="small muted">Have fun! We’ll keep an eye out for your next plan.</p>
+      </div>
     </>
   );
 }
