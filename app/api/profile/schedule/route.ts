@@ -8,7 +8,7 @@ const KINDS = new Set(["class", "fixed", "never"]);
 type Block = { kind: string; day: number; start: string; end: string; label?: string | null };
 
 // Replace my busy hours. Body: { blocks: [{ kind: "class"|"fixed"|"never", day: 0-6, start, end, label? }] }
-// Everything not listed between 9 AM and 11 PM counts as free.
+// Everything not listed between 9 AM and 9 PM counts as free.
 export async function PUT(req: Request) {
   const me = await requireStudent();
   if ("error" in me) return me.error;

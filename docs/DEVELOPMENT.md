@@ -32,7 +32,7 @@ Rotate the API keys after the hackathon.
 
 1. Sign in with an @nyu.edu email and a 6-digit code
 2. Paint busy hours (classes from an Albert screenshot, fixed commitments, never
-   free). Everything else from 9 AM to 11 PM is free. Repeats every week
+   free). Everything else from 9 AM to 9 PM is free. Repeats every week
 3. Pick interests and the smallest group you'd enjoy for each. The AI sets the
    largest group for each activity
 4. Matching finds plans starting in the next 4 hours and pushes them

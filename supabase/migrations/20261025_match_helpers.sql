@@ -19,7 +19,7 @@ language sql stable set search_path = public as $$
   )
 $$;
 
--- 캠퍼스(뉴욕) 시간 기준으로, p_now 부터 p_hours 시간 안(9~23시로 자름)의 빈 시간을
+-- 캠퍼스(뉴욕) 시간 기준으로, p_now 부터 p_hours 시간 안(9~21시로 자름)의 빈 시간을
 -- 학생의 관심사마다 한 줄씩 activity_slots 에 넣음. 60분 미만 빈 시간은 버림.
 -- 빼는 것: 그 요일 busy_blocks(class/fixed/never) + 그날 이미 들어가 있는 방 시간
 -- 반환: 넣은 줄 수
@@ -33,7 +33,7 @@ declare
   v_dow smallint := extract(dow from v_local)::smallint;
   v_now_min int := extract(hour from v_local)::int * 60 + extract(minute from v_local)::int;
   v_from int := greatest(v_now_min, 9 * 60);
-  v_to int := least(v_now_min + p_hours * 60, 23 * 60);
+  v_to int := least(v_now_min + p_hours * 60, 21 * 60);
   v_count int;
 begin
   delete from activity_slots where true;

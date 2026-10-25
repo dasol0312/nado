@@ -19,6 +19,8 @@ import { addDays, campusInstant, campusToday, dayOfWeek } from "@/lib/time";
 
 const LEAD_MINUTES = 20;      // 지금부터 최소 20분 뒤에 시작 (Nado! + confirm 할 시간)
 const CONFIRM_BEFORE = 10;    // 시작 10분 전까지 confirm
+const MAX_INVITES = 3;        // 한 학생이 동시에 가질 수 있는 초대(아직 안 끝난 방) 수
+const LAST_END = "21:00";     // 약속은 9시~21시 안에서만 (DB build_activity_slots 와 같은 범위)
 
 export type MatchOptions = { now?: string; dryRun?: boolean; force?: boolean };
 
@@ -56,7 +58,7 @@ export async function runMatch(sb: Db, opts: MatchOptions = {}) {
       sb.from("students").select("id").eq("is_sample", false).order("id").range(from, to)),
     sb.from("activities").select("name, label, category, max_size, meet_place_id, dest_place_id"),
     sb.from("places").select("id, key, name"),
-    sb.from("rooms").select("activity, room_members(student_id, status)")
+    sb.from("rooms").select("activity, starts_at, ends_at, room_members(student_id, status)")
       .neq("status", "cancelled").gte("starts_at", dayStart).lt("starts_at", dayEnd),
   ]);
   for (const r of [activitiesRes, placesRes, todayRes]) if (r.error) throw new Error(r.error.message);
@@ -66,10 +68,16 @@ export async function runMatch(sb: Db, opts: MatchOptions = {}) {
   const summary = { now: { date, time, day }, freeSlots: built.data as number, rooms: [] as unknown[], skipped: [] as unknown[] };
 
   // 같은 활동 방은 하루에 하나: 오늘 이미 초대받았거나 들어간 (학생, 활동)은 뺌
+  // 초대 수: 아직 안 끝난 방의 초대(invited/joined/confirmed)를 학생별로 셈 → 3개면 더 안 줌
   const taken = new Set<string>();
-  for (const room of (todayRes.data ?? []) as { activity: string; room_members: { student_id: string; status: string }[] }[]) {
+  const invites: Record<string, number> = {};
+  type TodayRoom = { activity: string; starts_at: string; ends_at: string | null; room_members: { student_id: string; status: string }[] };
+  for (const room of (todayRes.data ?? []) as TodayRoom[]) {
+    const ends = room.ends_at ? new Date(room.ends_at) : new Date(new Date(room.starts_at).getTime() + 3_600_000);
     for (const m of room.room_members ?? []) {
-      if (["invited", "joined", "confirmed"].includes(m.status)) taken.add(`${m.student_id}|${room.activity}`);
+      if (!["invited", "joined", "confirmed"].includes(m.status)) continue;
+      taken.add(`${m.student_id}|${room.activity}`);
+      if (ends > at) invites[m.student_id] = (invites[m.student_id] ?? 0) + 1;
     }
   }
   const minSize = new Map(interestRows.map((i) => [`${i.student_id}|${i.activity}`, i.min_size]));
@@ -80,7 +88,7 @@ export async function runMatch(sb: Db, opts: MatchOptions = {}) {
       activity: s.activity,
       day,
       start: String(s.start_time).slice(0, 5),
-      end: String(s.end_time).slice(0, 5),
+      end: String(s.end_time).slice(0, 5) > LAST_END ? LAST_END : String(s.end_time).slice(0, 5),
       minSize: minSize.get(`${s.student_id}|${s.activity}`) ?? 2,
       priority: real.has(s.student_id) ? 1 : 0,
     }));
@@ -119,6 +127,7 @@ export async function runMatch(sb: Db, opts: MatchOptions = {}) {
     slots, places, now: { day, time }, activityMap: {},
     maxSizes: Object.fromEntries(activities.map((a) => [a.name, a.max_size])),
     leadMinutes: LEAD_MINUTES, alignToFree: true, requirePriority: true,
+    maxRoomsPerStudent: MAX_INVITES, roomsAlready: invites,
   });
   summary.skipped = skipped.filter((s) => wanted.includes(s.activity));
   if (!rooms.length) return summary;

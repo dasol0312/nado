@@ -15,7 +15,7 @@ The team project `nado` is already set up with everything below. Don't re-run th
 | Function | What it does |
 |---|---|
 | `app_now()` | "Now", following the demo clock in `app_clock` |
-| `build_activity_slots(p_now?, p_hours = 4)` | Rebuilds `activity_slots`: each student's free time (campus time, 9–23h) in the next 4 hours × their interests, minus their busy blocks and rooms they're already in. Returns the row count. |
+| `build_activity_slots(p_now?, p_hours = 4)` | Rebuilds `activity_slots`: each student's free time (campus time, 9–21h) in the next 4 hours × their interests, minus their busy blocks and rooms they're already in. Returns the row count. |
 | `reset_demo()` | Between judges: deletes rooms, chat, judge accounts, AI-added activities and Claude-picked places. Keeps the 800 samples and 16 presets. |
 | `claim_match_minute()` | True only for the first call in each minute, so the timer and every open phone don't match twice at once. |
 | `start_match_timer(url, secret)` / `stop_match_timer()` | Turns the matching timer on or off: every minute, on the minute (pg_cron → `GET /api/match`). Run in the SQL Editor after deploying. Not callable from the app. |

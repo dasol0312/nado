@@ -80,11 +80,16 @@ export function openRooms(input: {
   leadMinutes?: number;
   alignToFree?: boolean;
   requirePriority?: boolean;
+  maxRoomsPerStudent?: number;          // 한 학생이 동시에 받을 수 있는 초대 수
+  roomsAlready?: Record<string, number>; // 학생별로 이미 받은(아직 안 끝난) 초대 수
 }): { rooms: Room[]; skipped: Skipped[] } {
   const {
     slots, places, now, activityMap,
     maxSizes = {}, leadMinutes = LEAD_MINUTES, alignToFree = false, requirePriority = false,
+    maxRoomsPerStudent = Infinity, roomsAlready = {},
   } = input;
+  const roomCount = new Map(Object.entries(roomsAlready));
+  const hasRoomLeft = (id: string) => (roomCount.get(id) ?? 0) < maxRoomsPerStudent;
 
   // 지금 + lead (alignToFree면 그 시각부터, 아니면 30분 단위로 올림)
   const soonest = toMin(now.time) + leadMinutes;
@@ -160,7 +165,7 @@ export function openRooms(input: {
       const fits: Fit[] = [];
       for (const [id, intervals] of students) {
         const iv = intervals.find((i) => i.from <= start && i.to >= start + MIN_MINUTES);
-        if (iv && isFree(id, start, start + MIN_MINUTES)) {
+        if (iv && isFree(id, start, start + MIN_MINUTES) && hasRoomLeft(id)) {
           fits.push({ id, until: iv.to, min: minSizeOf.get(`${activity}|${id}`) ?? MIN_PEOPLE, pri: priorityOf.get(id) ?? 0 });
         }
       }
@@ -207,6 +212,7 @@ export function openRooms(input: {
     if (!pick) break;
 
     for (const id of pick.members) {
+      roomCount.set(id, (roomCount.get(id) ?? 0) + 1);
       if (!busy.has(id)) busy.set(id, []);
       busy.get(id)!.push({ from: pick.start, to: pick.end });
     }
