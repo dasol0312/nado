@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { questionsFor } from "@/lib/catalog";
 import { HAIR, OUTFIT_COLORS, sampleOutfit, SHOES, TOPS } from "@/lib/outfits";
+import { startsIn } from "@/lib/plan-text";
 import { createClient } from "@/lib/supabase/client";
 import type { Outfit } from "@/types/database";
 import MemberChips from "../room/MemberChips";
@@ -17,7 +18,7 @@ import GlowScreen from "./GlowScreen";
 type Phase = "outfit" | "hunt" | "glow" | "done";
 
 export default function FindFlow({ roomId }: { roomId: string }) {
-  const { me, plans, plansReady, activities, act, toast } = useApp();
+  const { me, now, plans, plansReady, activities, act, toast } = useApp();
   const plan = plans.find((p) => p.id === roomId);
   const sb = useMemo(() => createClient(), []);
   const channel = useRef<RealtimeChannel | null>(null);
@@ -128,7 +129,7 @@ export default function FindFlow({ roomId }: { roomId: string }) {
       <>
         {back}
         {glowBanner}
-        <div className="aibox"><span className="ai">AI</span><div>{info?.label ?? plan.activity} starts in 30 minutes at <b>{place}</b>. What are you wearing today? Your group only sees this as hints, and it’s deleted after you meet.</div></div>
+        <div className="aibox"><span className="ai">AI</span><div>{info?.label ?? plan.activity} {startsIn(plan, now)} at <b>{place}</b>. What are you wearing today? Your group only sees this as hints, and it’s deleted after you meet.</div></div>
         <div className="stack"><span className="eyebrow">Top color</span>
           <div className="optgrid">{OUTFIT_COLORS.map(([n, c]) => (
             <button key={n} className={`swatch${outfit.color === n ? " on" : ""}`} style={{ background: c }} aria-label={n} title={n} onClick={() => setOutfit({ ...outfit, color: n })} />

@@ -48,7 +48,8 @@ export async function choosePlaces(activities: ActivityInfo[], knownPlaces: stri
   if (!activities.length) return out;
   const result = await askJson<PlacesResult>(PLACES_SYSTEM, placesUser(activities, knownPlaces), 4000);
   for (const a of activities) {
-    const r = result?.activities?.find((x) => x.activity === a.activity);
+    const list = Array.isArray(result?.activities) ? result.activities : []; // valid JSON can still be the wrong shape
+    const r = list.find((x) => x && typeof x === "object" && x.activity === a.activity);
     const meet = clean(r?.meet);
     const dest = clean(r?.dest);
     out.set(a.activity, meet ? { meet, dest: dest ?? meet, byClaude: true } : fallbackPair(a.category));
@@ -65,7 +66,7 @@ export async function writePlans(plans: PlanInput[]): Promise<Map<string, PlanTe
   const chunks: PlanInput[][] = [];
   for (let i = 0; i < plans.length; i += 15) chunks.push(plans.slice(i, i + 15));
   const results = await Promise.all(chunks.map((c) => askJson<PlanResult>(PLAN_SYSTEM, planUser(c), 3000)));
-  const written = results.flatMap((r) => r?.plans ?? []);
+  const written = results.flatMap((r) => (Array.isArray(r?.plans) ? r.plans : [])).filter((x) => x && typeof x === "object");
   for (const p of plans) {
     const w = written.find((x) => x.plan === p.plan);
     out.set(p.plan, {

@@ -51,4 +51,8 @@ export async function demoNow(sb: Db) {
   return new Date(data as string);
 }
 
-export const dbError = (e: unknown) => fail(500, "DB_ERROR", (e as Error).message);
+// Server error: details go to the server log, the student gets a plain message
+export const dbError = (e: unknown) => {
+  console.error("[nado] server error:", e);
+  return fail(500, "SERVER_ERROR", "Something went wrong on our side. Try again in a moment.");
+};

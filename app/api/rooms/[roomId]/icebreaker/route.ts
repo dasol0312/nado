@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { nextIcebreaker } from "@/lib/ai";
 import { questionsFor } from "@/lib/catalog";
 import { clip, LIMITS } from "@/lib/nado/prompts";
-import { dbError, fail, isUuid, requireStudent } from "@/lib/server/api";
+import { dbError, fail, isUuid, membership, requireStudent } from "@/lib/server/api";
 import { createClient } from "@/lib/supabase/server";
 
 export const maxDuration = 30;
@@ -19,9 +19,12 @@ export async function POST(req: Request, ctx: { params: Promise<{ roomId: string
 
   const sb = await createClient();
   try {
-    const room = await sb.from("rooms").select("activity, room_members(status)").eq("id", roomId).maybeSingle();
+    // Only confirmed members of a room that opened (each call can cost a Claude request)
+    if ((await membership(sb, roomId, me.studentId)) !== "confirmed") return fail(403, "NOT_CONFIRMED", "Only confirmed members can ask for a question.");
+    const room = await sb.from("rooms").select("activity, status, room_members(status)").eq("id", roomId).maybeSingle();
     if (room.error) throw new Error(room.error.message);
     if (!room.data) return fail(404, "NO_ROOM", "That group doesn't exist.");
+    if (room.data.status !== "confirmed") return fail(409, "PLAN_CLOSED", "This group isn’t open.");
     const act = await sb.from("activities").select("label, category").eq("name", room.data.activity).maybeSingle();
     if (act.error) throw new Error(act.error.message);
     const info = act.data;

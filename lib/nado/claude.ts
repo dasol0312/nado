@@ -43,7 +43,7 @@ export async function openRoomsWithClaude(input: {
 
   const normalized = await askJson<NormalizeResult>(NORMALIZE_SYSTEM, normalizeUser(names, presets));
   for (const name of names) {
-    const a = normalized?.activities?.find((x) => x.original === name);
+    const a = (Array.isArray(normalized?.activities) ? normalized.activities : []).find((x) => x && typeof x === "object" && x.original === name);
     if (!a) {
       activityMap[name] = name.trim().toLowerCase(); // Claude 실패 시: 원래 이름 그대로
       continue;
@@ -68,7 +68,7 @@ export async function openRoomsWithClaude(input: {
     : null;
 
   const opened: OpenedRoom[] = rooms.map((r, i) => {
-    const w = written?.rooms?.find((x) => x.room === ids[i]);
+    const w = (Array.isArray(written?.rooms) ? written.rooms : []).find((x) => x && typeof x === "object" && x.room === ids[i]);
     // 조건을 뺀 원래 이름("boba, Koreans only")은 화면에 안 보이게 숨김
     const hidden = new Set(filtered.map((f) => f.original));
     return {

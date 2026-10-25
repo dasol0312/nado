@@ -207,7 +207,12 @@ export async function runMatch(sb: Db, opts: MatchOptions = {}) {
     }
     const added = await sb.from("room_members")
       .insert(members.map((student_id) => ({ room_id: room.data.id, student_id, status: "invited" })));
-    if (added.error) console.error("[match] member insert failed:", added.error);
+    if (added.error) {
+      // No members → no plan: remove the empty room instead of reporting it as opened
+      console.error("[match] member insert failed:", added.error);
+      await sb.from("rooms").delete().eq("id", room.data.id);
+      continue;
+    }
     summary.rooms.push({ id: room.data.id, ...plan });
   }
   return summary;
@@ -254,8 +259,12 @@ async function savePlaces(
   for (const [activity, pair] of chosen) {
     const meetId = idOf.get(keyOf(pair.meet.name)) ?? null;
     const destId = idOf.get(keyOf(pair.dest.name)) ?? meetId;
-    const res = await sb.from("activities").update({ meet_place_id: meetId, dest_place_id: destId }).eq("name", activity);
-    if (res.error) throw new Error(res.error.message);
+    // Only Claude's picks stick to the activity. A fallback spot (Claude was down) is used for
+    // this plan only, so the next run asks Claude again instead of keeping the default forever.
+    if (pair.byClaude) {
+      const res = await sb.from("activities").update({ meet_place_id: meetId, dest_place_id: destId }).eq("name", activity);
+      if (res.error) throw new Error(res.error.message);
+    }
     const a = activities.find((x) => x.name === activity);
     if (a) {
       a.meet_place_id = meetId;

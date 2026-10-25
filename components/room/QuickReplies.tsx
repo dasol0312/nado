@@ -16,8 +16,9 @@ export default function QuickReplies({ roomId, members }: { roomId: string; memb
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
-    const { data } = await sb.from("messages").select("id, student_id, content, created_at").eq("room_id", roomId).order("created_at");
-    if (data) setMessages(data);
+    const { data } = await sb.from("messages").select("id, student_id, content, created_at").eq("room_id", roomId)
+      .order("created_at", { ascending: false }).limit(6);
+    if (data) setMessages([...data].reverse()); // newest 6, shown oldest first
   }, [sb, roomId]);
 
   useEffect(() => {

@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 import { AiError, readAlbertSchedule } from "@/lib/ai";
 import { fail, requireStudent } from "@/lib/server/api";
+import { cleanAlbertClasses } from "@/lib/validate";
 
 export const maxDuration = 60;
 const TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
-const TIME = /^([01]?\d|2[0-3]):[0-5]\d$/;
-const DAYS: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
 
 // Read an Albert schedule screenshot. Form data: image (PNG/JPG/WebP, up to 5 MB)
 // Returns { classes: [{ label, day: 0-6, start, end }] }. Nothing is saved here;
@@ -38,9 +37,7 @@ export async function POST(req: Request) {
   if (classes === null) {
     return fail(503, "AI_UNAVAILABLE", "Claude isn’t connected yet, so screenshots can’t be read. Paint your class hours as Fixed below instead.");
   }
-  const ok = (Array.isArray(classes) ? classes : [])
-    .filter((c) => c && DAYS[c.day] !== undefined && TIME.test(c.start) && TIME.test(c.end) && c.end.padStart(5, "0") > c.start.padStart(5, "0"))
-    .map((c) => ({ label: String(c.course || "Class").slice(0, 60), day: DAYS[c.day], start: c.start.padStart(5, "0"), end: c.end.padStart(5, "0") }));
+  const ok = cleanAlbertClasses(classes);
   if (!ok.length) return fail(422, "NO_CLASSES", "No classes found in that image. Take a screenshot that shows days and times.");
   return NextResponse.json({ classes: ok });
 }
