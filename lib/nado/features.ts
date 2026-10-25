@@ -1,4 +1,4 @@
-// nado v4.1: 학생이 직접 쓰는 Claude 기능 3개 (lib/ai.ts 에서 연결)
+// 학생이 직접 쓰는 Claude 기능 3개 (lib/ai.ts 에서 연결)
 //   readAlbert       Albert 시간표 캡처 → 수업 목록 (이미지, 기본 모델)
 //   thinkInterest    직접 입력한 관심사 → 카테고리, 최대/기본 최소 인원, 이유 (기본 모델)
 //   icebreaker       "Another question" → 질문 한 문장 (빠른 모델)

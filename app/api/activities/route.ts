@@ -60,7 +60,7 @@ export async function POST(req: Request) {
   }
 }
 
-// Keep only answers that fit the rules in Nado 개발 명세서 (새 키워드 고민 · 검증)
+// Keep only answers that fit our rules: a known category, a size of 2–12, a short reason
 function checkAnswer(a: InterestAnswer | null) {
   if (!a || !(CATEGORIES as readonly string[]).includes(a.cat)) return null;
   const max = Math.max(2, Math.min(12, Math.round(Number(a.max)) || 4));

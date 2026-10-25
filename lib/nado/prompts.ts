@@ -98,7 +98,7 @@ ${lines.join("\n")}
 
 export type WriteResult = { rooms: { room: string; invitation: string; icebreaker: string }[] };
 
-// v4.1 ④ 활동마다 만날 곳 + 활동 장소 고르기 --------------------------------------------------
+// 활동마다 만날 곳 + 활동 장소 고르기 --------------------------------------------------
 // 결과는 places / activities 에 저장해서 다음부터 재사용
 
 // 데모 약도에 핀을 꽂을 수 있는 길 이름 (데모 HTML 약도의 NS_X / EW_Y 와 같은 이름)
@@ -153,7 +153,7 @@ export type PlaceChoice = {
 };
 export type PlacesResult = { activities: { activity: string; meet: PlaceChoice; dest: PlaceChoice }[] };
 
-// v4.1 ⑤ 방마다 초대 문구 + 장소 이유 + 아이스브레이커 ---------------------------------------------
+// 방마다 초대 문구 + 장소 이유 + 아이스브레이커 ---------------------------------------------
 
 export const PLAN_SYSTEM = `You are the host of nado, an app that opens small meetups for NYU students who are strangers and
 want to do the same activity right now. Nobody organized these plans; you opened them.
@@ -188,7 +188,7 @@ ${plans.map((p) => `${p.plan} | ${p.activity} | ${p.start}-${p.end} | ${p.meet} 
 
 export type PlanResult = { plans: { plan: string; invitation: string; place_reason: string; icebreaker: string }[] };
 
-// v4.1 ⑥ Albert 시간표 캡처 읽기 (이미지) ----------------------------------------------------
+// Albert 시간표 캡처 읽기 (이미지) ----------------------------------------------------
 
 export const ALBERT_SYSTEM = `You read screenshots of NYU Albert class schedules (weekly calendar or list view) for nado,
 an app that finds students a free hour right after class.
@@ -208,7 +208,7 @@ Return only valid JSON, no text before or after, in exactly this shape:
 
 export type AlbertResult = { classes: { course: string; day: string; start: string; end: string }[] };
 
-// v4.1 ⑦ 직접 입력한 관심사 고민 ---------------------------------------------------------------
+// 직접 입력한 관심사 고민 ---------------------------------------------------------------
 // 장소는 여기서 안 정함: 그 활동의 첫 플랜이 열릴 때 PLACES_SYSTEM 이 고른다
 
 export function interestSystem(categories: readonly string[]) {
@@ -232,7 +232,7 @@ Return only valid JSON, no text before or after, in exactly this shape:
 
 export type InterestResult = { label: string; cat: string; max: number; min: number; reason: string };
 
-// v4.1 ⑧ "Another question" 아이스브레이커 -------------------------------------------------------
+// "Another question" 아이스브레이커 -------------------------------------------------------
 
 export function icebreakerUser(q: { people: number; label: string; previous: string }) {
   return `${q.people} NYU students who are strangers just met to do this together: "${q.label}".

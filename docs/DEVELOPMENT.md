@@ -67,11 +67,10 @@ room is `status = 'cancelled'`, which frees that hour for the next match.
 
 Claude sees only activity names and plan information, never names or IDs.
 
-### Claude features still to connect
+### Claude features students use directly
 
-`lib/ai.ts` has three functions that return null today, so the app uses
-fallbacks. Each one should call a new file in `lib/nado/`. Inputs, outputs,
-error codes and prompts: docs/HANDOFF-yerin.md.
+`lib/ai.ts` connects three functions to `lib/nado/features.ts` (prompts in
+`lib/nado/prompts.ts`). Without an API key, or when a call fails, each falls back:
 
 | lib/ai.ts | Used by | Fallback |
 |---|---|---|
@@ -94,8 +93,8 @@ error codes and prompts: docs/HANDOFF-yerin.md.
   icebreaker bank), `places.ts` (map landmarks), `time.ts` (campus time,
   America/New_York), `match/rules.ts` (room life cycle), `server/` (server-only:
   matching run, rooms, session cookie), `ai.ts` (Claude seam).
-- lib/nado/: room-opening logic from the AI teammate (Yerin). Don't edit here
-  without them; see lib/nado/README.md.
+- lib/nado/: the matching engine and Claude calls (prompts, fallbacks); see
+  lib/nado/README.md.
 - proxy.ts: sends signed-out visitors to /login (pages check the cookie again).
 - types/database.ts: row types matching supabase/schema.sql.
 - supabase/: schema, DB functions (migrations/), seed. See supabase/README.md.

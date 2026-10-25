@@ -1,4 +1,4 @@
-// Virtual NYU campus: generates the sample students the judge gets matched with.
+// Virtual NYU campus: generates the sample students real students get matched with.
 //
 //   npm run seed:students                 write 800 students to Supabase (.env.local keys)
 //   npm run seed:students -- --count 300  fewer students
@@ -18,7 +18,7 @@
 // Deterministic: every random choice comes from md5(n + salt), so the same command always
 // produces the same campus, with the same student ids. Re-running refreshes generated sample schedules/preferences without deleting
 // student rows, room memberships, or messages; real sign-ups are left alone.
-// Requires schema v4.1 plus the Place category migration. Uses a service key if set,
+// Requires schema.sql plus the Place category migration. Uses a service key if set,
 // otherwise the publishable/legacy anon key
 // (works only while the demo RLS policies are open).
 
@@ -139,7 +139,7 @@ const SHIFTS: [number, string, string][] = [
 const CLUBS = ["Korean Student Association", "Dance team practice", "Model UN", "Tech@NYU meeting", "A cappella rehearsal",
   "Photography club", "Outdoors club", "Robotics club", "Chinese Students and Scholars Association", "Student government"];
 
-// 40 × 40 = 1600 nicknames; samples use 800 of them, the rest are left for judges
+// 40 × 40 = 1600 nicknames; samples use 800 of them, the rest are left for real students
 const ADJ = ["Violet", "Yellow", "Green", "Blue", "Orange", "Pink", "Silver", "Coral", "Mint", "Lavender",
   "Sky", "Amber", "Golden", "Crimson", "Teal", "Indigo", "Ruby", "Jade", "Peach", "Lemon",
   "Olive", "Cobalt", "Scarlet", "Ivory", "Plum", "Sage", "Rose", "Copper", "Azure", "Honey",

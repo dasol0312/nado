@@ -306,7 +306,7 @@ export default function AppProvider({ me, children }: { me: Me | null; children:
     matchingRef.current = true;
     setMatching(true);
     try {
-      // main's /api/match (lib/server/match.ts) returns the plans it opened, with their members
+      // /api/match (lib/server/match.ts) returns the plans it opened, with their members
       // force only when asked (demo clock change); everything else respects once-per-minute,
       // so two runs can't invite the same person to two rooms at once
       const res = await act("/api/match", { force: opts.force === true });

@@ -1,4 +1,4 @@
-/* Ported from the nado-demo.html prototype. Tokens on :root, dark mode below. */
+/* Tokens on :root, dark mode below. */
 @import "tailwindcss";
 
 /* Layout: a full-screen mobile web app (iPhone Safari first), a centred column on wider screens. */

@@ -1,5 +1,5 @@
 import "server-only";
-// nado v4.1 매칭 한 번 돌리기 (1분 타이머, 열려 있는 앱, 데모 버튼이 호출)
+// 매칭 한 번 돌리기 (1분 타이머, 열려 있는 앱, 데모 시계 변경이 호출)
 // 한 분에 한 번만 돈다: claim_match_minute() 가 그 분의 첫 호출만 통과시킴 (force 면 건너뜀)
 //
 //   1. DB: build_activity_slots(지금)  → 지금부터 4시간 안 빈 시간 × 관심사
@@ -9,8 +9,8 @@ import "server-only";
 //   5. Claude: 초대 문구, 장소 이유, 아이스브레이커
 //   6. DB에 쓰기: rooms, room_members(invited) → Realtime 으로 폰에 초대 카드
 //
-// 샘플 학생끼리만 있는 방은 열지 않는다. 800명은 심사위원과 묶일 "캠퍼스"라서,
-// 미리 자기들끼리 방에 들어가 버리면 나중에 가입한 심사위원과 묶일 사람이 없어진다.
+// 샘플 학생끼리만 있는 방은 열지 않는다. 800명은 실제 학생과 묶일 "캠퍼스"라서,
+// 미리 자기들끼리 방에 들어가 버리면 나중에 가입한 실제 학생과 묶일 사람이 없어진다.
 
 import { subtractBusy } from "@/lib/match/rules";
 import { openRooms, toHHMM, toMin, type Place, type Slot } from "@/lib/nado/matching";

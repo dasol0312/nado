@@ -1,5 +1,5 @@
 // Checks a custom interest name before it reaches the catalog (used on screen and in /api/activities).
-// English only for now, no offensive words, no links, no keyboard mashing. Messages stay friendly.
+// English only, no offensive words, no links, no keyboard mashing. Messages stay friendly.
 
 export type NameCheck = { ok: true; name: string } | { ok: false; message: string };
 

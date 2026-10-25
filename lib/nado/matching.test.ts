@@ -106,9 +106,9 @@ const MAP: ActivityMap = { "bubble tea": "boba", "pickup basketball": "basketbal
   check("rooms never start before now + 30min", rooms.every((r) => r.start >= "18:30"));
 }
 
-// 8. v4.1: 각자 원하는 최소 인원 ---------------------------------------------------------
+// 8. 각자 원하는 최소 인원 ---------------------------------------------------------
 {
-  console.log("\n[8] v4.1: per-student minimum group size");
+  console.log("\n[8] per-student minimum group size");
   const base = { activity: "board games", day: 2, start: "15:00", end: "18:00" };
   const slots: Slot[] = [
     { ...base, studentId: "m1", minSize: 2 },
@@ -122,9 +122,9 @@ const MAP: ActivityMap = { "bubble tea": "boba", "pickup basketball": "basketbal
   check("4 people: everyone fits, room minSize = 4", four[0]?.members.length === 4 && four[0]?.minSize === 4);
 }
 
-// 9. v4.1: 활동별 최대 인원 + 실제 학생 우선 -------------------------------------------------
+// 9. 활동별 최대 인원 + 실제 학생 우선 -------------------------------------------------
 {
-  console.log("\n[9] v4.1: activity max size, real students first");
+  console.log("\n[9] activity max size, real students first");
   const slots: Slot[] = Array.from({ length: 6 }, (_, i) => ({
     studentId: `s${i + 1}`, activity: "boba", day: 2, start: "15:00", end: "18:00",
   }));
@@ -135,9 +135,9 @@ const MAP: ActivityMap = { "bubble tea": "boba", "pickup basketball": "basketbal
   check("the judge gets a seat in the first room", rooms[0]?.members.includes("zz_judge"));
 }
 
-// 9b. v4.1: 샘플끼리만 있는 방은 안 연다 (심사위원과 묶일 사람을 남겨둠) --------------------------
+// 9b. 샘플끼리만 있는 방은 안 연다 (실제 학생과 묶일 사람을 남겨둠) --------------------------
 {
-  console.log("\n[9b] v4.1: requirePriority keeps the sample pool for real students");
+  console.log("\n[9b] requirePriority keeps the sample pool for real students");
   const samples: Slot[] = Array.from({ length: 10 }, (_, i) => ({
     studentId: `s${i + 1}`, activity: i < 5 ? "boba" : "coffee", day: 2, start: "15:00", end: "18:00",
   }));
@@ -151,9 +151,9 @@ const MAP: ActivityMap = { "bubble tea": "boba", "pickup basketball": "basketbal
     some.length === 1 && some[0].members.includes("judge") && some[0].start === "16:00" && some[0].members.length === 4);
 }
 
-// 10. v4.1: 수업 끝나자마자 시작 ------------------------------------------------------------
+// 10. 수업 끝나자마자 시작 ------------------------------------------------------------
 {
-  console.log("\n[10] v4.1: start right when class ends (3:15)");
+  console.log("\n[10] start right when class ends (3:15)");
   const slots: Slot[] = [
     { studentId: "c1", activity: "boba", day: 1, start: "15:15", end: "17:00" },
     { studentId: "c2", activity: "boba", day: 1, start: "15:15", end: "17:00" },

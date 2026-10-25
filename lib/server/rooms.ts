@@ -6,7 +6,7 @@ import type { MemberStatus, RoomStatus } from "@/types/database";
 import { dbError, demoNow, fail, isUuid, membership, requireStudent, type Db } from "./api";
 
 // Open or dissolve a room depending on who answered (lib/match/rules.ts settle).
-// main's matching (lib/server/match.ts) already wrote the place, reason and icebreaker.
+// Matching (lib/server/match.ts) already wrote the place, reason and icebreaker.
 export async function settleRoom(sb: Db, roomId: string, now: Date): Promise<RoomStatus | null> {
   const res = await sb.from("rooms").select("status, min_size, confirm_by, room_members(student_id, status)").eq("id", roomId).maybeSingle();
   if (res.error) throw new Error(res.error.message);

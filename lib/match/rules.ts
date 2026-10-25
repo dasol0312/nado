@@ -1,4 +1,4 @@
-// The room life cycle after main's matching (lib/server/match.ts) opens a plan.
+// The room life cycle after matching (lib/server/match.ts) opens a plan.
 // A pure function so lib/match/rules.test.ts can check it without a database.
 import type { MemberStatus, RoomStatus } from "@/types/database";
 

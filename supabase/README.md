@@ -1,4 +1,4 @@
-# Supabase (schema v4.1)
+# Supabase
 
 The team project `nado` is already set up with everything below. Don't re-run these on it unless you mean to reset the demo.
 

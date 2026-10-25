@@ -1,4 +1,4 @@
--- nado v4.1 DB helpers (schema.sql 다음에 한 번 실행. 다시 실행해도 안전)
+-- nado DB helpers (schema.sql 다음에 한 번 실행. 다시 실행해도 안전)
 --
 -- app_now()                  데모 시계까지 반영한 "지금"
 -- build_activity_slots()     free 시간 ∩ 지금~4시간 × 관심사 → activity_slots 다시 만들기

@@ -7,8 +7,8 @@ import "server-only";
 //   thinkAboutInterest(q)      → app/api/activities (adding a custom interest, "Ask Claude to rethink")
 //   nextIcebreaker(q)          → app/api/rooms/[roomId]/icebreaker ("Another question")
 //
-// Already done in main: meeting spots, place reasons, invitations and the first icebreaker
-// are written by lib/nado/plan.ts when /api/match opens a plan.
+// Meeting spots, place reasons, invitations and the first icebreaker are written
+// by lib/nado/plan.ts when /api/match opens a plan.
 import type { Category } from "@/lib/catalog";
 import { ClaudeCallError, icebreaker, readAlbert, thinkInterest } from "@/lib/nado/features";
 

@@ -1,9 +1,9 @@
--- nado schema v4.1 (Cal Hacks 13.0 demo, NYU)
--- 새 흐름: 바쁜 시간 칠하기 + 관심사(최소 인원) → 지금부터 4시간 안 플랜 → Nado! → 전원 confirm → 방
--- Supabase > SQL Editor > New query 에 전체 붙여넣고 Run, 그다음 seed.sql
+-- nado schema (NYU)
+-- 흐름: 바쁜 시간 칠하기 + 관심사(최소 인원) → 지금부터 4시간 안 플랜 → Nado! → 전원 confirm → 방
+-- Supabase > SQL Editor > New query 에 전체 붙여넣고 Run, 그다음 migrations/ 와 npm run seed:students
 -- ⚠️ 다시 실행하면 기존 테이블과 데이터를 전부 지우고 새로 만듦
 --
--- 예린님 코드(app/api/open-rooms, lib/nado)가 읽고 쓰는 컬럼은 v3와 이름·타입이 같음:
+-- 매칭 코드(lib/nado)가 읽고 쓰는 컬럼:
 --   activity_slots(student_id, activity, day_of_week, start_time, end_time, week_start)
 --   places(id, name, good_for)
 --   rooms(activity, starts_at, place_id, invitation, icebreaker, color, status)
@@ -78,8 +78,7 @@ create table interests (
 );
 
 -- 6. 매칭 입력 스냅샷 (사람이 직접 쓰지 않음)
---    /api/match 가 매번 "free 시간 ∩ 지금~4시간 후 × 관심사" 로 다시 만들고,
---    예린님의 /api/open-rooms 가 그대로 읽음
+--    /api/match 가 매분 "free 시간 ∩ 지금~4시간 후 × 관심사" 로 다시 만들어서 읽음
 create table activity_slots (
   id uuid primary key default gen_random_uuid(),
   student_id uuid not null references students(id) on delete cascade,

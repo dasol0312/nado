@@ -43,7 +43,7 @@ async function main() {
   const result = await openRoomsWithClaude({
     slots: [...SLOTS, ...extra],
     places: PLACES,
-    now: { day: 0, time: "10:30" }, // 일요일 10:30 (심사 시간)
+    now: { day: 0, time: "10:30" }, // 일요일 10:30
     presets: ["boba", "basketball", "hiking", "musicals", "baseball", "board games", "karaoke", "coffee", "study"],
   });
 
