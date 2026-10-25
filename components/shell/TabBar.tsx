@@ -10,7 +10,7 @@ export default function TabBar() {
   const path = usePathname();
   const { plans, now } = useApp();
   const newCount = upcomingMatches(plans, now).length;
-  const groupCount = activeGroups(plans).length;
+  const groupCount = activeGroups(plans, now).length;
   const tabs = [
     { href: "/profile", label: "Profile", icon: <CalendarIcon />, n: 0 },
     { href: "/matches", label: "Matches", icon: <BellIcon />, n: newCount },

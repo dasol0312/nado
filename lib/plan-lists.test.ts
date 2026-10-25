@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Plan } from "@/components/shell/AppProvider";
-import { activeGroups, upcomingMatches } from "./plan-lists";
+import { activeGroups, pastGroups, upcomingMatches } from "./plan-lists";
 
 const now = new Date("2026-10-25T13:00:00Z");
 function plan(id: string, minutes: number, status: Plan["status"] = "open", myStatus: Plan["myStatus"] = "invited"): Plan {
@@ -32,5 +32,17 @@ test("groups include waiting and confirmed groups, excluding past/dissolved and 
     plan("left", 30, "confirmed", "cancelled"),
     plan("invited", 30), plan("declined", 30, "open", "declined"),
   ];
-  assert.deepEqual(activeGroups(plans).map((p) => p.id), ["waiting", "waiting-for-others", "room-open"]);
+  assert.deepEqual(activeGroups(plans, now).map((p) => p.id), ["waiting", "waiting-for-others", "room-open"]);
+});
+
+test("groups drop out once they start (still waiting) or end (room open), and ended rooms become past", () => {
+  const plans = [
+    plan("waiting-started", -5, "open", "joined"),
+    plan("room-running", -30, "confirmed", "confirmed"),
+    plan("room-ended", -90, "confirmed", "confirmed"),
+    plan("dissolved", -10, "cancelled", "joined"),
+    plan("left", -90, "confirmed", "cancelled"),
+  ];
+  assert.deepEqual(activeGroups(plans, now).map((p) => p.id), ["room-running"]);
+  assert.deepEqual(pastGroups(plans, now).map((p) => p.id), ["dissolved", "room-ended"]);
 });

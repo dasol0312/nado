@@ -18,6 +18,7 @@ export default function PlanCard({ plan, highlight }: { plan: Plan; highlight?: 
         {ctx && <span className="pill">{ctx}</span>}
       </div>
       <div className="kw">{plan.activity}<small>{info?.label ?? plan.activity} · {info?.category ?? "Other"}</small></div>
+      {plan.invitation && <p className="invite">{plan.invitation}</p>}
       <div className="meta">
         <span>{plan.members.length} matched</span>
         <span>min {plan.minSize}</span>

@@ -4,7 +4,7 @@
 // Supabase Realtime), my profile, the activity catalog, push banners and toasts.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
-import { isHiddenCategory } from "@/lib/catalog";
+import { displayCategory } from "@/lib/catalog";
 import { clockNow, type ClockRow } from "@/lib/clock";
 import { createClient } from "@/lib/supabase/client";
 import { HORIZON_MINUTES } from "@/lib/time";
@@ -178,7 +178,7 @@ export default function AppProvider({ me, children }: { me: Me | null; children:
       .from("activities")
       .select("name, label, category, max_size, min_default, reason, by_ai, meet:places!activities_meet_place_id_fkey(key, name, address, is_campus, ns_street, ew_street, far, confident), dest:places!activities_dest_place_id_fkey(key, name, address, is_campus, ns_street, ew_street, far, confident)")
       .order("created_at");
-    if (data) setActivities((data as unknown as ActivityRow[]).filter((a) => !isHiddenCategory(a.category)));
+    if (data) setActivities((data as unknown as ActivityRow[]).map((a) => ({ ...a, category: displayCategory(a.category) as ActivityRow["category"] })));
   }, [sb]);
   useEffect(() => {
     const t = setTimeout(reloadActivities, 0);
@@ -289,8 +289,15 @@ export default function AppProvider({ me, children }: { me: Me | null; children:
     setMatching(true);
     try {
       // main's /api/match (lib/server/match.ts) returns the plans it opened, with their members
-      // 버튼(quietIfNone 아님)은 force: 이번 분에 이미 돌았어도 다시 돌림
-      const res = await act("/api/match", { force: opts.force ?? !opts.quietIfNone });
+      // force only when asked (demo clock change); everything else respects once-per-minute,
+      // so two runs can't invite the same person to two rooms at once
+      const res = await act("/api/match", { force: opts.force === true });
+      // Someone already ran it this minute: the next minute picks it up
+      if (typeof res.skipped === "string") {
+        await reloadPlans(opts.title);
+        if (!opts.quietIfNone) toast("Looking again in under a minute");
+        return;
+      }
       const opened = Array.isArray(res.rooms) ? (res.rooms as { members?: string[] }[]) : [];
       const mine = opened.filter((r) => r.members?.includes(me.id)).length;
       try {
@@ -300,7 +307,9 @@ export default function AppProvider({ me, children }: { me: Me | null; children:
       // Realtime may have shown the banner already; `mine` says whether anything new is mine
       if (!fresh.length && !mine && !opts.quietIfNone) toast(`No new plans for the next ${HORIZON_MINUTES / 60} hours`);
     } catch (e) {
-      toast((e as Error).message);
+      // Background runs (every minute) fail quietly; the next minute tries again
+      if (opts.quietIfNone) console.warn("[nado] matching failed:", (e as Error).message);
+      else toast((e as Error).message);
     } finally {
       matchingRef.current = false;
       setMatching(false);

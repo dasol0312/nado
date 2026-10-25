@@ -37,6 +37,7 @@ export async function changeMyStatus(
   from: MemberStatus[],
   to: MemberStatus,
   after?: (sb: Db, roomId: string) => Promise<void>,
+  needsOpenPlan = false, // Nado!/Confirm: the plan must still be open and not started
 ) {
   const me = await requireStudent();
   if ("error" in me) return me.error;
@@ -48,6 +49,12 @@ export async function changeMyStatus(
     const now = await demoNow(sb);
     const status = await membership(sb, roomId, me.studentId);
     if (!status) return fail(404, "NOT_INVITED", "You're not in this group.");
+    const room = await sb.from("rooms").select("status, starts_at").eq("id", roomId).single();
+    if (room.error) throw new Error(room.error.message);
+    const started = new Date(room.data.starts_at).getTime() <= now.getTime();
+    if (room.data.status === "cancelled" || (needsOpenPlan && (room.data.status !== "open" || started))) {
+      return fail(409, "PLAN_CLOSED", "This plan isn’t open anymore.");
+    }
     if (status !== to) {
       if (!from.includes(status)) return fail(409, "WRONG_STEP", `You can't do that now (you're ${status}).`);
       const res = await sb

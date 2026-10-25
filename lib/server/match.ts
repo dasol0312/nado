@@ -15,7 +15,7 @@ import "server-only";
 import { openRooms, type Place, type Slot } from "@/lib/nado/matching";
 import { choosePlaces, writePlans, type PlacePair } from "@/lib/nado/plan";
 import { selectAll, type Db } from "@/lib/server/api";
-import { isHiddenCategory } from "@/lib/catalog";
+import { settleRoom } from "@/lib/server/rooms";
 import { addDays, campusInstant, campusToday, dayOfWeek } from "@/lib/time";
 
 const LEAD_MINUTES = 20;      // 지금부터 최소 20분 뒤에 시작 (Nado! + confirm 할 시간)
@@ -43,6 +43,14 @@ export async function runMatch(sb: Db, opts: MatchOptions = {}) {
   if (Number.isNaN(at.getTime())) throw new Error("now must be an ISO timestamp.");
   const { date, time } = campusToday(at);
   const day = dayOfWeek(date);
+
+  // 확정 마감이 지난 열린 플랜 정리: 최소 인원이면 방 열기, 아니면 해산 (응답 안 한 사람은 declined)
+  // → 응답 안 한 사람의 그 시간이 다시 비고, 초대 3개 제한에서도 빠짐
+  if (!opts.dryRun) {
+    const overdue = await sb.from("rooms").select("id").eq("status", "open").lte("confirm_by", at.toISOString());
+    if (overdue.error) throw new Error(overdue.error.message);
+    for (const r of overdue.data ?? []) await settleRoom(sb, r.id, at);
+  }
 
   const built = await sb.rpc("build_activity_slots", { p_now: at.toISOString() });
   if (built.error) throw new Error(built.error.message);
@@ -82,10 +90,8 @@ export async function runMatch(sb: Db, opts: MatchOptions = {}) {
     }
   }
   const minSize = new Map(interestRows.map((i) => [`${i.student_id}|${i.activity}`, i.min_size]));
-  // 앱에서 숨긴 카테고리(Study)는 매칭하지 않음
-  const hidden = new Set(activities.filter((a) => isHiddenCategory(a.category)).map((a) => a.name));
   const slots: Slot[] = slotRows
-    .filter((s) => !taken.has(`${s.student_id}|${s.activity}`) && !hidden.has(s.activity))
+    .filter((s) => !taken.has(`${s.student_id}|${s.activity}`))
     .map((s) => ({
       studentId: s.student_id,
       activity: s.activity,

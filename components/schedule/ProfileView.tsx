@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { sameBlocks, type Block } from "@/lib/schedule";
-import { isHiddenActivity, MAX_INTERESTS } from "@/lib/catalog";
+import { MAX_INTERESTS } from "@/lib/catalog";
 import InterestPicker, { type Picked } from "../interests/InterestPicker";
 import { useApp } from "../shell/AppProvider";
 import { Mascot } from "../shell/icons";
@@ -20,7 +20,7 @@ export default function ProfileView() {
     if (!profile) return;
     const t = setTimeout(() => {
       setBlocks((b) => b ?? profile.blocks);
-      setInterests((i) => i ?? profile.interests.filter((x) => !isHiddenActivity(x.activity)));
+      setInterests((i) => i ?? profile.interests);
     }, 0);
     return () => clearTimeout(t);
   }, [profile]);
@@ -86,7 +86,7 @@ export default function ProfileView() {
       <p className="small muted" style={{ marginTop: -10 }}>Classes come from Albert. Paint other commitments and hours you’re never free; everything else counts as free.</p>
       {blocks ? <ScheduleEditor blocks={blocks} onChange={changeBlocks} /> : <div className="empty"><span className="spinner" /></div>}
       {!!interests?.length && <Link className="btn block" href="/matches">See my matches</Link>}
-      <p className="small muted" style={{ textAlign: "center" }}>Other students only ever see your nickname and the plan details.</p>
+      <p className="small muted" style={{ textAlign: "center" }}>Other students only see your nickname. Your schedule and interests stay private.</p>
     </>
   );
 }

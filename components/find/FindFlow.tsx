@@ -56,8 +56,8 @@ export default function FindFlow({ roomId }: { roomId: string }) {
 
   useEffect(() => {
     if (phase !== "done" || !plan || question) return;
-    // The first question comes from the activity's list; Claude is asked only for "Another question"
-    const t = setTimeout(() => setQuestion(questionsFor(plan.activity, info?.category)[0]), 0);
+    // The first question is the one Claude wrote with the plan (or the activity's list); "Another question" asks again
+    const t = setTimeout(() => setQuestion(plan.icebreaker || questionsFor(plan.activity, info?.category)[0]), 0);
     act(`/api/rooms/${roomId}/outfit`, undefined, "DELETE").catch(() => {}); // hints are deleted once you've met
     return () => clearTimeout(t);
   }, [phase, plan, question, info?.category, roomId, act]);
