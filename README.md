@@ -393,10 +393,12 @@ Four Korean exchange students who kept wishing someone nearby would say *"나도
 
 | Name | Role | What they built |
 |---|---|---|
-| Kyeongseo Jang | _role_ | _what they built_ |
-| Yeyoung Kwon | _role_ | _what they built_ |
-| Dasol Yun | _role_ | _what they built_ |
-| Yerin Eun | _role_ | _what they built_ |
+| Kyeongseo Jang | Research · Presentation | Competitor and problem research, the presentation slides and script, the demo video |
+| Yeyoung Kwon | Research · Presentation | Competitor and problem research, the presentation slides and script, the demo video |
+| Dasol Yun | Frontend · App backend | App screens and flow, and the API behind them: sign-in, profiles, and the plan life cycle |
+| Yerin Eun | AI · Matching backend | The original idea, the matching engine and every-minute matching run, Claude features, the 800-student sample campus |
+
+We defined the problem and shaped nado together.
 
 Built at **Cal Hacks 13.0**, San Francisco · Powered by the **Claude API** and developed with **Claude Code**
 
