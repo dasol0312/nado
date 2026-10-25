@@ -1,7 +1,7 @@
 "use client";
 
 // The room after everyone confirmed: where to meet (map + AI reason), who's coming,
-// the 30-minute reminder, and the demo "one member cancels" button.
+// "Share your outfit" (find each other), and "I can't make it".
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -139,13 +139,8 @@ export default function RoomView({ roomId }: { roomId: string }) {
 
       <QuickReplies roomId={roomId} members={plan.members} />
 
-      <Link className="btn block" href={`/rooms/${roomId}/find`}>Get the 30-minute reminder (demo: start now)</Link>
+      <Link className="btn block" href={`/rooms/${roomId}/find`}>Share your outfit</Link>
       <button className="btn ghost sm" disabled={busy} onClick={() => cancel(`/api/rooms/${roomId}/cancel`, true)}>I can’t make it</button>
-      <div className="demo-act">
-        <span className="eyebrow">Demo · schedule change</span>
-        <p className="small muted">If cancellations drop the group below {plan.minSize} people, the room dissolves and everyone left goes back into matching for that hour.</p>
-        <button className="btn ghost sm" disabled={busy} onClick={() => cancel("/api/demo/cancel-member", false)}>One member cancels</button>
-      </div>
     </>
   );
 }
