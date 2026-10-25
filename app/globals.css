@@ -228,5 +228,10 @@ p{margin:0}
 a.btn{text-decoration:none}
 select.input{appearance:auto}
 .matching{display:inline-flex;align-items:center;gap:6px}
-.next-check{display:flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:8px 12px;border-radius:11px;background:var(--accent-soft);color:var(--accent);font-size:13px;font-weight:600}
-.next-check b{font-size:15px;letter-spacing:.02em}
+.next-check{display:flex;align-items:center;gap:8px;min-height:36px;padding:0 4px;font-size:13px;color:var(--ink)}
+.next-check .matching{color:var(--accent);font-weight:600}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--good);flex:none;box-shadow:0 0 0 0 var(--good);animation:breathe 2.4s ease-in-out infinite}
+@keyframes breathe{50%{box-shadow:0 0 0 5px transparent;opacity:.55}}
+.next-in{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.ring{width:14px;height:14px;border-radius:50%;background:conic-gradient(var(--accent) var(--p,0deg),var(--line) 0);-webkit-mask:radial-gradient(circle,transparent 3.5px,#000 4px);mask:radial-gradient(circle,transparent 3.5px,#000 4px)}
+@media (prefers-reduced-motion:reduce){.live-dot{animation:none}}
