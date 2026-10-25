@@ -268,11 +268,11 @@ erDiagram
     places ||--o{ rooms : "meet at"
 ```
 
-| Table | What's in it | Rows on Oct 25 |
+| Table | What's in it | Rows (Oct 25, 8 AM San Francisco) |
 |---|---|---|
-| `students` | Nickname, NYU email (null for samples), `is_sample` | 805 (800 sample + 5 real) |
-| `busy_blocks` | Weekly busy hours: `class` (Albert), `fixed`, `never` | ~10,400 |
-| `interests` | Student × activity, with that student's minimum group size | ~2,100 |
+| `students` | Nickname, NYU email (null for samples), `is_sample` | 800 (all sample; real sign-ups add to this) |
+| `busy_blocks` | Weekly busy hours: `class` (Albert), `fixed`, `never` | ~10,350 |
+| `interests` | Student × activity, with that student's minimum group size | 2,100 |
 | `activities` | 16 presets, 3 sample *Place* interests, and ones students added. Category, max size, and Claude's reason | 21 |
 | `places` | Meeting spots and venues Claude picked (campus or not, address, nearest streets) | 14 |
 | `activity_slots` | **Rebuilt every minute:** each student's free time in the next 4 hours × their interests | ~2,000 |
@@ -290,7 +290,7 @@ erDiagram
 
 A matching app is only as good as the people on it, so we generated a campus: **800 virtual NYU students** ([`scripts/generate-students.ts`](scripts/generate-students.ts)). Each has a realistic class schedule (75-minute MW/TR blocks, recitations, evening labs), jobs and clubs, 2–3 interests tilted by major, and their own minimum group size. So every hour of the week looks different, and the same command always generates the same campus.
 
-1. Scan the QR code (or open **[nado-pied.vercel.app](https://nado-pied.vercel.app)**) on your phone and sign in with any `@nyu.edu` address. Any 6-digit code works. You join the 800 sample students as a real one.
+1. Scan the QR code (or open **[nado-pied.vercel.app](https://nado-pied.vercel.app)**) on your phone and sign in with any `@nyu.edu` address. Any 6-digit code works. You join the campus as student #801.
 2. Pick up to 3 interests and upload a schedule screenshot (or paint your hours).
 3. Within a minute, if enough students are free and like the same thing, a plan appears. Tap **Nado!**, then confirm.
 4. Sample students confirm on their own, the room opens, and you can play the find game through to **Found!**
