@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { nextIcebreaker } from "@/lib/ai";
 import { questionsFor } from "@/lib/catalog";
+import { clip, LIMITS } from "@/lib/nado/prompts";
 import { dbError, fail, isUuid, requireStudent } from "@/lib/server/api";
 import { createClient } from "@/lib/supabase/server";
 
@@ -27,7 +28,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ roomId: string
 
     const people = room.data.room_members.filter((m) => m.status === "confirmed").length;
     const ai = await nextIcebreaker({ people, label: info?.label ?? room.data.activity, previous }).catch(() => null);
-    if (ai) return NextResponse.json({ question: ai.slice(0, 160), byAI: true });
+    const question = clip(ai, LIMITS.icebreaker);
+    if (question) return NextResponse.json({ question, byAI: true });
     const bank = questionsFor(room.data.activity, info?.category);
     return NextResponse.json({ question: bank[(bank.indexOf(previous) + 1) % bank.length], byAI: false });
   } catch (e) {

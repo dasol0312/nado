@@ -4,7 +4,7 @@
 
 import { askJson } from "./claude";
 import {
-  EW_STREETS, NS_STREETS, PLACES_SYSTEM, PLAN_SYSTEM, placesUser, planUser,
+  clip, EW_STREETS, LIMITS, NS_STREETS, PLACES_SYSTEM, PLAN_SYSTEM, placesUser, planUser,
   type PlaceChoice, type PlacesResult, type PlanResult,
 } from "./prompts";
 
@@ -34,7 +34,7 @@ function clean(p: unknown): PlaceChoice | null {
   return {
     name,
     address: str(v.address, 120),
-    description: str(v.description, 200),
+    description: clip(v.description, LIMITS.placeDescription) ?? "",
     ns: NS_STREETS.includes(str(v.ns, 60)) ? str(v.ns, 60) : "",
     ew: EW_STREETS.includes(str(v.ew, 60)) ? str(v.ew, 60) : "",
     far: ["N", "S", "E", "W"].includes(str(v.far, 1)) ? str(v.far, 1) : "",
@@ -68,13 +68,12 @@ export async function writePlans(plans: PlanInput[]): Promise<Map<string, PlanTe
   const written = results.flatMap((r) => r?.plans ?? []);
   for (const p of plans) {
     const w = written.find((x) => x.plan === p.plan);
-    const str = (x: unknown, max: number) => (typeof x === "string" && x.trim() ? x.trim().slice(0, max) : null);
     out.set(p.plan, {
-      invitation: str(w?.invitation, 120) ?? `${cap(p.activity)} at ${shortTime(p.start)}, meet at ${p.meet}?`,
-      place_reason: str(w?.place_reason, 320) ?? (p.dest === p.meet
+      invitation: clip(w?.invitation, LIMITS.invitation) ?? `${cap(p.activity)} at ${shortTime(p.start)}, meet at ${p.meet}?`,
+      place_reason: clip(w?.place_reason, LIMITS.placeReason) ?? (p.dest === p.meet
         ? `${p.meet} is easy to find and has room for the group.`
         : `Meet at ${p.meet} first, then walk over to ${p.dest} together.`),
-      icebreaker: str(w?.icebreaker, 160) ?? `What got you into ${p.activity}?`,
+      icebreaker: clip(w?.icebreaker, LIMITS.icebreaker) ?? `What got you into ${p.activity}?`,
     });
   }
   return out;

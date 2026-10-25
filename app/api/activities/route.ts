@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { thinkAboutInterest, type InterestAnswer } from "@/lib/ai";
 import { CATEGORIES, isPreset, type Category } from "@/lib/catalog";
+import { clip, LIMITS } from "@/lib/nado/prompts";
 import { dbError, fail, requireStudent } from "@/lib/server/api";
 import { createClient } from "@/lib/supabase/server";
 
@@ -66,6 +67,6 @@ function checkAnswer(a: InterestAnswer | null) {
     category: a.cat as Category,
     max,
     min: Math.max(2, Math.min(max, Math.round(Number(a.min)) || 2)),
-    reason: String(a.reason || "").slice(0, 320),
+    reason: clip(a.reason, LIMITS.interestReason) ?? "",
   };
 }
