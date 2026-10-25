@@ -4,6 +4,7 @@
 // Controlled: `value` in, onChange(value) out.
 import { useState } from "react";
 import { CATEGORIES, isPreset, MAX_INTERESTS } from "@/lib/catalog";
+import { checkInterestName } from "@/lib/interest-text";
 import { useApp } from "../shell/AppProvider";
 import MinSizeSheet from "./MinSizeSheet";
 
@@ -43,9 +44,11 @@ export default function InterestPicker({ value, onChange, show = "all", onEmptyS
 
   async function addCustom(e: React.FormEvent) {
     e.preventDefault();
-    const name = custom.trim();
-    if (!name) return;
+    if (!custom.trim()) return;
     if (full) return setMsg({ text: fullMsg, error: true });
+    const checked = checkInterestName(custom);
+    if (!checked.ok) return setMsg({ text: checked.message, error: true });
+    const name = checked.name;
     setBusy(name);
     setMsg(null);
     try {
