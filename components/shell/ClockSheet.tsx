@@ -42,7 +42,7 @@ export default function ClockSheet({ onClose }: { onClose: () => void }) {
       await reloadClock();
       toast(msg);
       onClose();
-      runMatch({ quietIfNone: true });
+      runMatch({ quietIfNone: true, force: true }); // the clock moved, so run even if this minute already did
     } catch (e) {
       toast((e as Error).message);
       setBusy(false);

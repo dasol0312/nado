@@ -167,3 +167,56 @@ ${plans.map((p) => `${p.plan} | ${p.activity} | ${p.start}-${p.end} | ${p.meet} 
 }
 
 export type PlanResult = { plans: { plan: string; invitation: string; place_reason: string; icebreaker: string }[] };
+
+// v4.1 ⑥ Albert 시간표 캡처 읽기 (이미지) ----------------------------------------------------
+
+export const ALBERT_SYSTEM = `You read screenshots of NYU Albert class schedules (weekly calendar or list view) for nado,
+an app that finds students a free hour right after class.
+Return every weekly class meeting you can see: lectures, recitations, labs and seminars.
+
+Rules:
+- One entry per meeting day. A class on Monday and Wednesday is two entries.
+- "course": the course code and short title as shown, like "MATH-UA 121 Calculus I". At most 60 characters.
+  Never include the student's name, ID, email or anything else personal.
+- "day": one of Mon, Tue, Wed, Thu, Fri, Sat, Sun.
+- "start" and "end": 24-hour "HH:MM" in the times shown (2:00 PM is "14:00").
+- Skip one-time events such as exams and holidays, and anything without a day and time.
+- If the image is not a class schedule, or no times are readable, return an empty list.
+
+Return only valid JSON, no text before or after, in exactly this shape:
+{"classes":[{"course":"MATH-UA 121 Calculus I","day":"Mon","start":"14:00","end":"15:15"}]}`;
+
+export type AlbertResult = { classes: { course: string; day: string; start: string; end: string }[] };
+
+// v4.1 ⑦ 직접 입력한 관심사 고민 ---------------------------------------------------------------
+// 장소는 여기서 안 정함: 그 활동의 첫 플랜이 열릴 때 PLACES_SYSTEM 이 고른다
+
+export function interestSystem(categories: readonly string[]) {
+  return `You help nado, an app that groups NYU students who are strangers for an activity within the next few hours.
+A student typed an activity that isn't on the preset list. Think it through in this order:
+
+1. What is the activity, and which category fits best: ${categories.join(", ")}.
+   Write a clean "label" of at most 4 words in Title Case ("badminton" -> "Badminton").
+   If the text includes a condition about who can join based on nationality, race, ethnicity, religion,
+   gender, age, sexuality or looks ("boba, Koreans only"), leave the condition out of the label.
+   Skill level ("beginners") and language practice are fine to keep.
+2. "max": the largest group of strangers that actually works for it, from 2 to 12. Think about tickets,
+   table or court size, cost and how awkward a big group of strangers would be. When unsure, go smaller.
+3. "min": a sensible default minimum, at least 2 and at most max.
+4. "reason": one or two plain sentences addressed to the student, explaining the group size.
+
+Return only valid JSON, no text before or after, in exactly this shape:
+{"label":"Badminton","cat":"Sports","max":4,"min":2,"reason":"..."}`;
+}
+
+export type InterestResult = { label: string; cat: string; max: number; min: number; reason: string };
+
+// v4.1 ⑧ "Another question" 아이스브레이커 -------------------------------------------------------
+
+export function icebreakerUser(q: { people: number; label: string; previous: string }) {
+  return `${q.people} NYU students who are strangers just met to do this together: "${q.label}".
+Write one light, funny icebreaker question that is specifically about ${q.label}:
+its habits, hot takes, rituals, or memorable moments.
+Avoid generic questions about school, majors or hometowns${q.previous ? `, and don't repeat this one: "${q.previous}"` : ""}.
+Reply in English with the question only, no quotes.`;
+}

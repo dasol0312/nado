@@ -1,9 +1,10 @@
 // /api/match — 매칭 한 번 돌리기 (lib/server/match.ts)
 //
-// POST  앱에서 부름: 데모 버튼, 심사위원이 설정을 끝낸 직후
-//   body (모두 선택): { now?: "2026-10-26T15:20:00-04:00", dryRun?: true }
+// POST  앱에서 부름: 매 분 정각(열려 있는 동안), "Check again now" 버튼
+//   body (모두 선택): { now?: "2026-10-26T15:20:00-04:00", dryRun?: true, force?: true }
+//   한 분에 한 번만 돈다. force 면 그 확인을 건너뜀 (버튼)
 //   now 를 안 주면 데모 시계(app_clock) 기준 지금. dryRun 이면 DB에 방을 쓰지 않고 결과만 보여줌
-// GET   5분 타이머(Supabase pg_cron)가 부름. CRON_SECRET 이 설정돼 있으면
+// GET   1분 타이머(Supabase pg_cron, 매 분 00초)가 부름. CRON_SECRET 이 설정돼 있으면
 //   Authorization: Bearer <CRON_SECRET> 헤더가 있어야 함
 //
 // 같은 사람을 같은 활동에 두 번 초대하지 않으니, 여러 번 눌러도 방이 겹치지 않는다.
@@ -17,7 +18,7 @@ export const dynamic = "force-dynamic";
 // Claude 호출 두 번(장소, 문구)에 시간이 걸림
 export const maxDuration = 60;
 
-async function handle(opts: { now?: string; dryRun?: boolean }) {
+async function handle(opts: { now?: string; dryRun?: boolean; force?: boolean }) {
   if (!process.env.ANTHROPIC_API_KEY) return fail(500, "NO_API_KEY", "ANTHROPIC_API_KEY is not set on the server.");
   try {
     const sb = await createClient();
@@ -34,7 +35,7 @@ export async function POST(req: Request) {
   if (body.now !== undefined && (typeof body.now !== "string" || Number.isNaN(Date.parse(body.now)))) {
     return fail(400, "BAD_REQUEST", 'now must be an ISO timestamp like "2026-10-26T15:20:00-04:00".');
   }
-  return handle({ now: body.now as string | undefined, dryRun: body.dryRun === true });
+  return handle({ now: body.now as string | undefined, dryRun: body.dryRun === true, force: body.force === true });
 }
 
 export async function GET(req: Request) {

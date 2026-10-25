@@ -19,7 +19,7 @@ Environment variables (get the keys by private message, never in GitHub or publi
 - ANTHROPIC_API_KEY: server-only secret. Never prefix it with NEXT_PUBLIC_
   and never expose it through browser code, logs, or API responses.
 - ANTHROPIC_WORKSPACE_ID: Anthropic workspace for the API key.
-- CRON_SECRET (optional): the 5-minute matching timer sends it to GET /api/match.
+- CRON_SECRET (optional): the 1-minute matching timer sends it to GET /api/match.
 - NADO_SESSION_SECRET: signs the login cookie. Required in production.
 - NADO_EMAIL_OTP: `1` emails real codes through Supabase Auth. Empty = demo
   mode (no email, any 6 digits work).
@@ -45,8 +45,9 @@ Rotate the API keys after the hackathon.
 
 ### Matching (`/api/match`, `lib/server/match.ts`)
 
-Runs every minute (Supabase pg_cron → GET; the app also runs it at the top of each
-minute and shows a countdown on Right now), after a profile change, when a room opens, and after a group dissolves (POST).
+Runs every minute on the minute (Supabase pg_cron → GET; once per minute via claim_match_minute;
+the app also runs it at :00 and shows a countdown on Right now), after a
+profile change, when a room opens, and after a group dissolves (POST).
 
 1. DB function `build_activity_slots()`: everyone's free time in the next 4 hours
    × their interests, minus busy blocks and rooms they're in → `activity_slots`
@@ -83,7 +84,7 @@ error codes and prompts: docs/HANDOFF-yerin.md.
 - app/: pages and API route handlers.
   - `/login` (@nyu.edu email + code; demo: any 6 digits). New students land on `/profile`
   - `(tabs)/`: `/matches`, `/groups`, `/profile` share the tab bar and run
-    matching in the background (every minute)
+    matching in the background (every minute, on the minute)
   - `/rooms/[roomId]`: meeting spot map, group, 30-minute reminder
   - `/rooms/[roomId]/find`: outfit hints, glow screen, icebreaker
 - components/: UI by screen (shell, auth, schedule, interests, matches, groups,

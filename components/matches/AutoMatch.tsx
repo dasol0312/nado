@@ -1,13 +1,17 @@
 "use client";
 
-// Matching runs on arrival and at the top of every minute, the same beat as the DB timer
-// (pg_cron, every minute). The countdown on Right now (NextCheck) counts down to the same moment.
+// While the app is open, matching runs on arrival and then every minute, exactly on the
+// minute (:00 seconds), in step with the server timer. The server runs at most once per
+// minute (claim_match_minute), so the timer and every open phone share one run.
+// The demo clock runs it too. Right now shows a countdown to the next run (NextCheck).
 import { useEffect } from "react";
 import { useApp } from "../shell/AppProvider";
 
-export const EVERY = 60_000;
-// ms until the next whole minute
-export const msToNextCheck = (t = Date.now()) => EVERY - (t % EVERY);
+const MINUTE = 60_000;
+const untilNextMinute = () => MINUTE - (Date.now() % MINUTE) + 250; // a beat after :00
+// For the countdown on Right now (NextCheck)
+export const EVERY = MINUTE;
+export const msToNextCheck = (t = Date.now()) => MINUTE - (t % MINUTE);
 
 export default function AutoMatch() {
   const { profile, runMatch } = useApp();
@@ -15,21 +19,16 @@ export default function AutoMatch() {
 
   useEffect(() => {
     if (!ready) return;
-    let last = 0;
-    try {
-      last = Number(sessionStorage.getItem("nado:lastMatch") ?? 0);
-    } catch {}
-    const run = () => runMatch({ quietIfNone: true });
-    const arrive = Date.now() - last > EVERY ? setTimeout(run, 600) : undefined;
-    let every: ReturnType<typeof setInterval> | undefined;
-    const first = setTimeout(() => {
-      run();
-      every = setInterval(run, EVERY);
-    }, msToNextCheck());
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      runMatch({ quietIfNone: true });
+      timer = setTimeout(tick, untilNextMinute()); // re-align every time, so it never drifts
+    };
+    const first = setTimeout(() => runMatch({ quietIfNone: true }), 600);
+    timer = setTimeout(tick, untilNextMinute());
     return () => {
-      clearTimeout(arrive);
       clearTimeout(first);
-      clearInterval(every);
+      clearTimeout(timer);
     };
   }, [ready, runMatch]);
 

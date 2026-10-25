@@ -18,8 +18,8 @@ main에서 이미 끝난 것(할 필요 없음):
 ## 0. 화면 쪽에서 매칭을 쓰는 방식
 
 ```
-POST /api/match            ← "Check again now", 프로필 변경, 방이 열린 뒤, 해산 1.8초 뒤
-GET  /api/match            ← pg_cron 5분 타이머 (main 그대로)
+POST /api/match            ← 매분 정각(앱이 열려 있을 때), 프로필 변경, 방이 열린 뒤, 해산 1.8초 뒤
+GET  /api/match            ← pg_cron 1분 타이머 (매 분 정각) (main 그대로)
         │  main의 runMatch: 방 + room_members(invited) 저장
         ▼
 Realtime → 폰에 푸시 배너 → Nado!(joined) → Confirm(confirmed)
@@ -34,7 +34,11 @@ Realtime → 폰에 푸시 배너 → Nado!(joined) → Confirm(confirmed)
 
 ---
 
-## A. AI 기능 3개
+## A. AI 기능 3개 ✅ 연결됨 (lib/nado/features.ts)
+
+> 2026-10-25: 세 함수 모두 `lib/nado/features.ts`에 만들고 `lib/ai.ts`에 연결했어요. 키가 없으면 지금처럼 `null`(기본값)이에요.
+> 진짜 Claude로 시험: `npx tsx --env-file=.env.local lib/nado/try-features.ts [albert.png]`
+> 관심사 고민에는 차별 조건 빼기("boba, Koreans only" → "Boba")도 넣었어요.
 
 **연결 방법**: `lib/ai.ts`에 함수 3개가 자리만 있고 지금은 `null`을 돌려줘요(`null`이면 화면이 기본값으로 동작해요). `lib/nado/`에 함수를 만들고, `lib/ai.ts`의 해당 함수 안에서 불러서 결과를 그대로 돌려주면 끝이에요. 기존 `askJson`(lib/nado/claude.ts)을 그대로 쓰면 돼요.
 
@@ -131,7 +135,7 @@ npm run typecheck && npm run lint && npm run build
 npm run dev
 # DB에 안 쓰고 매칭 결과만 보기 (월 11:50 기준):
 curl -X POST localhost:3000/api/match -H 'Content-Type: application/json' -d '{"dryRun":true,"now":"2026-10-26T11:50:00-04:00"}'
-# 화면 흐름: 로그인 → Profile에서 관심사 → Matches "Check again now" → Nado! → Groups에서 Confirm
+# 화면 흐름: 로그인 → Profile에서 관심사 → Matches에서 다음 매칭(매분 정각) 기다리기 → Nado! → Groups에서 Confirm
 ```
 
 관련 코드: `lib/ai.ts`, `lib/server/rooms.ts`, `lib/match/rules.ts`, `app/api/activities/`, `app/api/schedule/read/`. 궁금한 점은 다솔에게 물어봐 주세요.

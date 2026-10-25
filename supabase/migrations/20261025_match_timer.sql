@@ -1,4 +1,4 @@
--- nado: 5분마다 매칭 (Supabase pg_cron → GET /api/match)
+-- nado: 매칭 타이머 (Supabase pg_cron → GET /api/match). 지금은 1분마다: 20261025_match_every_minute.sql
 -- Vercel 무료 플랜은 cron이 하루 한 번까지라서, 타이머는 DB 쪽에 둔다.
 --
 -- 이 파일은 함수만 만든다. 배포 후 SQL Editor에서 한 번:
@@ -18,7 +18,7 @@ begin
   perform cron.unschedule(jobid) from cron.job where jobname = 'nado-match';
   return cron.schedule(
     'nado-match',
-    '*/5 * * * *',
+    '* * * * *',
     format(
       $job$select net.http_get(url := %L, headers := %L::jsonb, timeout_milliseconds := 60000)$job$,
       p_url,

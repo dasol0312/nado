@@ -54,7 +54,7 @@ type Ctx = {
   reloadProfile: () => Promise<void>;
   reloadActivities: () => Promise<void>;
   matching: boolean;
-  runMatch: (opts?: { title?: string; quietIfNone?: boolean }) => Promise<void>;
+  runMatch: (opts?: { title?: string; quietIfNone?: boolean; force?: boolean }) => Promise<void>;
   banner: Banner;
   showBanner: (plan: Plan, title: string) => void;
   hideBanner: () => void;
@@ -282,13 +282,14 @@ export default function AppProvider({ me, children }: { me: Me | null; children:
     return json as Record<string, unknown>;
   }, []);
 
-  const runMatch = useCallback(async (opts: { title?: string; quietIfNone?: boolean } = {}) => {
+  const runMatch = useCallback(async (opts: { title?: string; quietIfNone?: boolean; force?: boolean } = {}) => {
     if (!me || matchingRef.current) return;
     matchingRef.current = true;
     setMatching(true);
     try {
       // main's /api/match (lib/server/match.ts) returns the plans it opened, with their members
-      const res = await act("/api/match", {});
+      // 버튼(quietIfNone 아님)은 force: 이번 분에 이미 돌았어도 다시 돌림
+      const res = await act("/api/match", { force: opts.force ?? !opts.quietIfNone });
       const opened = Array.isArray(res.rooms) ? (res.rooms as { members?: string[] }[]) : [];
       const mine = opened.filter((r) => r.members?.includes(me.id)).length;
       try {
