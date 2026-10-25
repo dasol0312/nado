@@ -1,7 +1,6 @@
 "use client";
 
 // NYU email → 6-digit code. In demo mode no email is sent and any 6 digits work.
-// Judge mode: any (non-NYU) email, no email sent, any 6 digits.
 import { useState } from "react";
 import { useApp } from "../shell/AppProvider";
 import { BackIcon, Mascot, MailIcon } from "../shell/icons";
@@ -16,7 +15,6 @@ export default function LoginFlow() {
   const [demo, setDemo] = useState(true);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [judge, setJudge] = useState(false);
 
   async function post(path: string, body: unknown) {
     const res = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -27,12 +25,11 @@ export default function LoginFlow() {
 
   async function sendCode(e?: React.FormEvent) {
     e?.preventDefault();
-    if (!judge && !/^[a-z0-9._%+-]+@nyu\.edu$/i.test(email.trim())) return setError("Use your NYU email (ending in @nyu.edu).");
-    if (judge && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setError("Enter a valid email.");
+    if (!/^[a-z0-9._%+-]+@nyu\.edu$/i.test(email.trim())) return setError("Use your NYU email (ending in @nyu.edu).");
     setBusy(true);
     setError("");
     try {
-      const res = await post("/api/auth/start", { email, judge });
+      const res = await post("/api/auth/start", { email });
       setDemo(!!res.demo);
       setStep("code");
       toast(`Code sent to ${email.trim()}${res.demo ? " (demo)" : ""}`);
@@ -48,7 +45,7 @@ export default function LoginFlow() {
     setBusy(true);
     setError("");
     try {
-      const res = await post("/api/auth/verify", { email, code, judge });
+      const res = await post("/api/auth/verify", { email, code });
       go(res.next);
     } catch (err) {
       setError((err as Error).message);
@@ -63,15 +60,13 @@ export default function LoginFlow() {
         <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 22, padding: "8px 4px" }}>
           <div style={{ color: "var(--accent)" }}><MailIcon /></div>
           <div className="stack">
-            <h1>{judge ? "Judge mode" : "Check your NYU inbox"}</h1>
-            <p className="muted">{judge
-              ? <>Signing in as <b style={{ color: "var(--ink)" }}>{email}</b>. Type any 6 digits to continue.</>
-              : <>We sent a 6-digit code to <b style={{ color: "var(--ink)" }}>{email}</b>. Enter it below to verify you’re an NYU student.</>}</p>
+            <h1>Check your NYU inbox</h1>
+            <p className="muted">We sent a 6-digit code to <b style={{ color: "var(--ink)" }}>{email}</b>. Enter it below to verify you’re an NYU student.</p>
           </div>
           <CodeInput bad={!!error} disabled={busy} onSubmit={verify} />
           {error && <p className="err">{error}</p>}
-          {!judge && <p className="small muted">Didn’t get it? <button type="button" className="link" onClick={() => sendCode()}>Resend code</button></p>}
-          {demo && !judge && (
+          <p className="small muted">Didn’t get it? <button type="button" className="link" onClick={() => sendCode()}>Resend code</button></p>
+          {demo && (
             <div className="aibox" style={{ background: "var(--amber-soft)" }}>
               <span className="ai" style={{ background: "var(--amber)", color: "var(--card)" }}>DEMO</span>
               <div>No email is actually sent in the demo. Type any 6 digits.</div>
@@ -94,15 +89,12 @@ export default function LoginFlow() {
       </div>
       <form className="stack" style={{ gap: 12 }} noValidate onSubmit={sendCode}>
         <div className="field">
-          <label htmlFor="email">{judge ? "Your email" : "NYU email"}</label>
-          <input className="input" id="email" type="email" inputMode="email" autoComplete="email" placeholder={judge ? "you@example.com" : "netid@nyu.edu"} value={email} onChange={(e) => setEmail(e.target.value)} />
+          <label htmlFor="email">NYU email</label>
+          <input className="input" id="email" type="email" inputMode="email" autoComplete="email" placeholder="netid@nyu.edu" value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
         {error && <p className="err">{error}</p>}
-        <button className="btn block" type="submit" disabled={busy}>{busy ? <span className="spinner" /> : judge ? "Continue as a judge" : "Send verification code"}</button>
-        <p className="small muted">
-          {judge ? "Judge mode lets hackathon judges try Nado without an NYU email. " : "Only @nyu.edu addresses can join. "}
-          <button type="button" className="link" onClick={() => { setJudge(!judge); setError(""); }}>{judge ? "I’m an NYU student" : "I’m a judge"}</button>
-        </p>
+        <button className="btn block" type="submit" disabled={busy}>{busy ? <span className="spinner" /> : "Send verification code"}</button>
+        <p className="small muted">Only @nyu.edu addresses can join.</p>
       </form>
     </div>
   );

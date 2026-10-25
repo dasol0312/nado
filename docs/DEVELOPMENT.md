@@ -81,7 +81,7 @@ error codes and prompts: docs/HANDOFF-yerin.md.
 ## Directory responsibilities
 
 - app/: pages and API route handlers.
-  - `/login` (NYU email + code, or Judge mode). New students land on `/profile`
+  - `/login` (@nyu.edu email + code; demo: any 6 digits). New students land on `/profile`
   - `(tabs)/`: `/matches`, `/groups`, `/profile` share the tab bar and run
     matching in the background (every minute)
   - `/rooms/[roomId]`: meeting spot map, group, 30-minute reminder
@@ -116,8 +116,8 @@ Before real users: Supabase Auth sessions, ownership and membership policies.
 
 All routes except auth and demo need the session cookie.
 
-- POST /api/auth/start `{ email, judge? }`, POST /api/auth/verify `{ email, code, judge? }`
-  (Judge mode: any non-NYU email, no code sent),
+- POST /api/auth/start `{ email }`, POST /api/auth/verify `{ email, code }`
+  (@nyu.edu only; demo mode sends nothing and accepts any 6 digits),
   POST /api/auth/signout
 - PUT /api/profile/schedule `{ blocks: [{ kind, day, start, end, label? }] }`
 - PUT /api/profile/interests `{ interests: [{ activity, min }] }`
