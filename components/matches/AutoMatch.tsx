@@ -1,11 +1,14 @@
 "use client";
 
-// Matching runs on arrival and every 5 minutes (each run asks Claude twice, so not more often).
+// While the app is open, matching runs on arrival and then every minute, exactly on the
+// minute (:00 seconds), in step with the server timer. The server runs at most once per
+// minute (claim_match_minute), so the timer and every open phone share one run.
 // The demo clock and "Check again now" run it too.
 import { useEffect } from "react";
 import { useApp } from "../shell/AppProvider";
 
-const EVERY = 5 * 60_000;
+const MINUTE = 60_000;
+const untilNextMinute = () => MINUTE - (Date.now() % MINUTE) + 250; // a beat after :00
 
 export default function AutoMatch() {
   const { profile, runMatch } = useApp();
@@ -13,15 +16,16 @@ export default function AutoMatch() {
 
   useEffect(() => {
     if (!ready) return;
-    let last = 0;
-    try {
-      last = Number(sessionStorage.getItem("nado:lastMatch") ?? 0);
-    } catch {}
-    const first = setTimeout(() => runMatch({ quietIfNone: true }), Date.now() - last > EVERY ? 600 : EVERY - (Date.now() - last));
-    const every = setInterval(() => runMatch({ quietIfNone: true }), EVERY);
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      runMatch({ quietIfNone: true });
+      timer = setTimeout(tick, untilNextMinute()); // re-align every time, so it never drifts
+    };
+    const first = setTimeout(() => runMatch({ quietIfNone: true }), 600);
+    timer = setTimeout(tick, untilNextMinute());
     return () => {
       clearTimeout(first);
-      clearInterval(every);
+      clearTimeout(timer);
     };
   }, [ready, runMatch]);
 

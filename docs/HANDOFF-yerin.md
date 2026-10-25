@@ -19,7 +19,7 @@ main에서 이미 끝난 것(할 필요 없음):
 
 ```
 POST /api/match            ← "Check again now", 프로필 변경, 방이 열린 뒤, 해산 1.8초 뒤
-GET  /api/match            ← pg_cron 5분 타이머 (main 그대로)
+GET  /api/match            ← pg_cron 1분 타이머 (매 분 정각) (main 그대로)
         │  main의 runMatch: 방 + room_members(invited) 저장
         ▼
 Realtime → 폰에 푸시 배너 → Nado!(joined) → Confirm(confirmed)

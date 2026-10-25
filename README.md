@@ -79,7 +79,7 @@ That thought lasts about ten minutes. If finding people takes a day of back-and-
 
 - **Today only, up to four hours ahead.** No calendars, no "next Saturday?" Every plan starts within the next four hours, some just minutes away.
 - **Built around the end of class.** *"Right after MATH-UA 121"*: plans start when your class lets out, because that's when the free hour actually begins.
-- **Always fresh.** nado re-checks every 5 minutes and whenever a class ends, so a plan can show up while you're walking out of the lecture hall.
+- **Always fresh.** nado re-checks every minute and whenever a class ends, so a plan can show up while you're walking out of the lecture hall.
 - **One hour, one tap.** You're not giving up your weekend, just your next free hour. That's what makes saying *"나도!"* easy, even to strangers.
 
 A plan made weeks ahead needs commitment. A plan for *right now* only needs a yes.
@@ -126,7 +126,7 @@ flowchart LR
 
 1. **Sign in** with an NYU email. You become a random nickname like **Coral Owl**. No photo, no bio.
 2. **Set up once.** Pick interests and the smallest group you'd enjoy for each. Upload a screenshot of your Albert schedule and **Claude reads your classes**. Paint anything else as *Fixed* or *Never free*.
-3. **Get matched.** Every 5 minutes, and whenever a class ends, nado checks the next four hours: ***Boba · 3:15–4:15 PM · Right after MATH-UA 121 · 4 matched · meet at Kimmel.*** A push arrives. Tap **Nado!**
+3. **Get matched.** Every minute, on the minute, nado checks the next four hours: ***Boba · 3:15–4:15 PM · Right after MATH-UA 121 · 4 matched · meet at Kimmel.*** A push arrives. Tap **Nado!**
 4. **Confirm.** When everyone confirms, you drop straight into the room and the hour goes on your schedule, so you're never double-booked.
 5. **Meet.** Always at a public NYU lobby first, then a short walk to the venue, with **Claude's one-line reason** for the plan.
 6. **Find each other.** You describe your outfit; hints about your group unlock one at a time. Still lost? Tap **"I give up"** and your screen **glows** *"I'm here!"*
@@ -202,7 +202,7 @@ Using AI thoughtfully means knowing how it fails the person on the other end.
 flowchart TB
     P["Students' phones<br/>(installable web app)"] <--> API["Next.js API routes<br/>(Vercel)"]
     API --> C1["Claude: schedule reading,<br/>interest understanding"]
-    JOB["Matching run<br/>every 5 min + when classes end"] --> M["lib/nado/matching.ts<br/>(plain code)"]
+    JOB["Matching run<br/>every minute, on the minute"] --> M["lib/nado/matching.ts<br/>(plain code)"]
     M --> C2["Claude: plan reason,<br/>icebreaker"]
     API <--> DB[("Supabase<br/>Postgres + Realtime")]
     JOB <--> DB
@@ -261,7 +261,7 @@ When a judge signs in on their own phone, they join that campus as **student #80
 | The judge, on their own phone | The other 800 students: generated schedules, interests, and group sizes, marked as sample data |
 | Claude reading the schedule, understanding interests, screening, writing the plan and icebreaker | Sample students' confirmations and outfits in the find game |
 | The matching code, running over all 801 students | A presenter-only demo clock, so "right after class" works at any hour |
-| Real-time updates between phones | Matching on a button press instead of every 5 minutes |
+| Real-time updates between phones | Matching on a button press instead of every minute |
 
 **Next:** real push notifications · Claude with live web search for venues open right now · private post-meetup feedback and blocking · more campuses, one at a time.
 

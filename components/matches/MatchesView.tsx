@@ -43,7 +43,7 @@ export default function MatchesView() {
         </label>
       </div>
       <button className="btn soft sm" disabled={matching} onClick={() => runMatch({ title: "A plan fits the next few hours" })}>
-        {matching ? <span className="matching"><span className="spinner" />Claude is looking for plans…</span> : "Check again now (runs every 5 min)"}
+        {matching ? <span className="matching"><span className="spinner" />Claude is looking for plans…</span> : "Check again now (runs every minute)"}
       </button>
       <div className="section-h"><h2>Next 4 hours</h2><span className="small muted">{list.length} plan{list.length === 1 ? "" : "s"}</span></div>
       {!plansReady ? (

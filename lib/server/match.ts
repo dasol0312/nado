@@ -1,5 +1,6 @@
 import "server-only";
-// nado v4.1 매칭 한 번 돌리기 (5분 타이머, 데모 버튼, 심사위원 설정 직후에 호출)
+// nado v4.1 매칭 한 번 돌리기 (1분 타이머, 열려 있는 앱, 데모 버튼이 호출)
+// 한 분에 한 번만 돈다: claim_match_minute() 가 그 분의 첫 호출만 통과시킴 (force 면 건너뜀)
 //
 //   1. DB: build_activity_slots(지금)  → 지금부터 4시간 안 빈 시간 × 관심사
 //   2. DB에서 읽기: activity_slots, 최소 인원, 실제 학생, 활동, 장소, 오늘 이미 잡힌 방
@@ -19,9 +20,15 @@ import { addDays, campusInstant, campusToday, dayOfWeek } from "@/lib/time";
 const LEAD_MINUTES = 20;      // 지금부터 최소 20분 뒤에 시작 (Nado! + confirm 할 시간)
 const CONFIRM_BEFORE = 10;    // 시작 10분 전까지 confirm
 
-export type MatchOptions = { now?: string; dryRun?: boolean };
+export type MatchOptions = { now?: string; dryRun?: boolean; force?: boolean };
 
 export async function runMatch(sb: Db, opts: MatchOptions = {}) {
+  // 같은 분에 이미 누가 돌렸으면 건너뜀 (타이머 + 여러 폰이 동시에 불러도 방이 겹치지 않게)
+  if (!opts.force && !opts.dryRun) {
+    const claim = await sb.rpc("claim_match_minute");
+    if (claim.error) throw new Error(claim.error.message);
+    if (claim.data !== true) return { skipped: "Already ran this minute.", rooms: [] as unknown[] };
+  }
   // 1. 지금 (데모 시계 반영) + 빈 시간 계산
   let nowIso = opts.now;
   if (!nowIso) {

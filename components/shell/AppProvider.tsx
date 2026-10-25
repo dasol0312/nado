@@ -283,7 +283,8 @@ export default function AppProvider({ me, children }: { me: Me | null; children:
     setMatching(true);
     try {
       // main's /api/match (lib/server/match.ts) returns the plans it opened, with their members
-      const res = await act("/api/match", {});
+      // 버튼(quietIfNone 아님)은 force: 이번 분에 이미 돌았어도 다시 돌림
+      const res = await act("/api/match", { force: !opts.quietIfNone });
       const opened = Array.isArray(res.rooms) ? (res.rooms as { members?: string[] }[]) : [];
       const mine = opened.filter((r) => r.members?.includes(me.id)).length;
       try {
