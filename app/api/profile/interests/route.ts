@@ -1,18 +1,25 @@
 import { NextResponse } from "next/server";
 import { dbError, fail, requireStudent } from "@/lib/server/api";
+import { MAX_INTERESTS } from "@/lib/catalog";
 import { createClient } from "@/lib/supabase/server";
 
 // Replace my interests. Body: { interests: [{ activity, min }] }
-// min = the smallest group I'd enjoy (at least 2, at most the activity's max).
+// min = the smallest group I'd enjoy (at least 2, at most the activity's max). At most MAX_INTERESTS (3).
 export async function PUT(req: Request) {
   const me = await requireStudent();
   if ("error" in me) return me.error;
   const body = await req.json().catch(() => null);
   const list: unknown = body?.interests;
-  if (!Array.isArray(list) || list.length > 30) return fail(400, "BAD_REQUEST", "interests must be a list.");
+  if (!Array.isArray(list)) return fail(400, "BAD_REQUEST", "interests must be a list.");
 
   const sb = await createClient();
   try {
+    // Over the limit is OK only while trimming down (older profiles may have more than 3)
+    if (list.length > MAX_INTERESTS) {
+      const now = await sb.from("interests").select("activity", { count: "exact", head: true }).eq("student_id", me.studentId);
+      if (now.error) throw new Error(now.error.message);
+      if (list.length >= (now.count ?? 0)) return fail(400, "TOO_MANY", `Pick up to ${MAX_INTERESTS} interests.`);
+    }
     const names = list.map((i) => (typeof i?.activity === "string" ? i.activity : ""));
     const known = await sb.from("activities").select("name, max_size").in("name", names);
     if (known.error) throw new Error(known.error.message);

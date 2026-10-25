@@ -32,7 +32,7 @@ Rotate the API keys after the hackathon.
 
 1. Sign in with an @nyu.edu email and a 6-digit code
 2. Paint busy hours (classes from an Albert screenshot, fixed commitments, never
-   free). Everything else from 9 AM to 11 PM is free. Repeats every week
+   free). Everything else from 9 AM to 9 PM is free. Repeats every week
 3. Pick interests and the smallest group you'd enjoy for each. The AI sets the
    largest group for each activity
 4. Matching finds plans starting in the next 4 hours and pushes them
@@ -45,7 +45,8 @@ Rotate the API keys after the hackathon.
 
 ### Matching (`/api/match`, `lib/server/match.ts`)
 
-Runs every minute on the minute (Supabase pg_cron → GET; once per minute via claim_match_minute), on "Check again now", after a
+Runs every minute on the minute (Supabase pg_cron → GET; once per minute via claim_match_minute;
+the app also runs it at :00 and shows a countdown on Right now), after a
 profile change, when a room opens, and after a group dissolves (POST).
 
 1. DB function `build_activity_slots()`: everyone's free time in the next 4 hours
@@ -81,7 +82,7 @@ error codes and prompts: docs/HANDOFF-yerin.md.
 ## Directory responsibilities
 
 - app/: pages and API route handlers.
-  - `/login` (NYU email + code, or Judge mode). New students land on `/profile`
+  - `/login` (@nyu.edu email + code; demo: any 6 digits). New students land on `/profile`
   - `(tabs)/`: `/matches`, `/groups`, `/profile` share the tab bar and run
     matching in the background (every minute, on the minute)
   - `/rooms/[roomId]`: meeting spot map, group, 30-minute reminder
@@ -116,8 +117,8 @@ Before real users: Supabase Auth sessions, ownership and membership policies.
 
 All routes except auth and demo need the session cookie.
 
-- POST /api/auth/start `{ email, judge? }`, POST /api/auth/verify `{ email, code, judge? }`
-  (Judge mode: any non-NYU email, no code sent),
+- POST /api/auth/start `{ email }`, POST /api/auth/verify `{ email, code }`
+  (@nyu.edu only; demo mode sends nothing and accepts any 6 digits),
   POST /api/auth/signout
 - PUT /api/profile/schedule `{ blocks: [{ kind, day, start, end, label? }] }`
 - PUT /api/profile/interests `{ interests: [{ activity, min }] }`

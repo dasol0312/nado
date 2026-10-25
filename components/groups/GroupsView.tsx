@@ -3,6 +3,7 @@
 // Groups I said nado to, plus groups that dissolved. When everyone confirms, go straight in.
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
+import { activeGroups, pastGroups } from "@/lib/plan-lists";
 import { planRange, whenLabel } from "@/lib/plan-text";
 import { useApp } from "../shell/AppProvider";
 import { Mascot } from "../shell/icons";
@@ -11,8 +12,8 @@ import GroupCard from "./GroupCard";
 export default function GroupsView() {
   const { now, plans, plansReady, toast, runMatch } = useApp();
   const router = useRouter();
-  const active = plans.filter((p) => p.status !== "cancelled" && (p.myStatus === "joined" || p.myStatus === "confirmed"));
-  const past = plans.filter((p) => p.status === "cancelled" && p.myStatus !== "declined" && p.myStatus !== "invited").slice(-3).reverse();
+  const active = activeGroups(plans, now);
+  const past = pastGroups(plans, now);
 
   // A group that just opened → into the room
   const before = useRef<Map<string, string> | null>(null);
@@ -41,16 +42,22 @@ export default function GroupsView() {
       )}
       {past.length > 0 && (
         <>
-          <div className="section-h"><h2>Past groups</h2></div>
+          <div className="section-h"><h2>Past month</h2></div>
           {past.map((p) => (
             <article key={p.id} className="card rec" style={{ opacity: 0.75 }}>
               <div className="top">
                 <span>{whenLabel(p, now)}</span>
                 <span className="mono time">{planRange(p)}</span>
-                <span className="pill bad">Dissolved</span>
+                {p.status === "cancelled" ? <span className="pill bad">Dissolved</span> : <span className="pill plain">Done</span>}
               </div>
-              <div className="kw">{p.activity}<small>fell below the minimum</small></div>
-              <p className="small muted">That hour went back into the matching pool.</p>
+              {p.status === "cancelled" ? (
+                <>
+                  <div className="kw">{p.activity}<small>fell below the minimum</small></div>
+                  <p className="small muted">That hour went back into the matching pool.</p>
+                </>
+              ) : (
+                <div className="kw">{p.activity}<small>{p.members.length} people</small></div>
+              )}
             </article>
           ))}
         </>

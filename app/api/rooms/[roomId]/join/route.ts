@@ -20,5 +20,5 @@ export async function POST(_req: Request, ctx: { params: Promise<{ roomId: strin
       .eq("room_id", roomId)
       .in("student_id", waiting.data.map((m) => m.student_id));
     if (res.error) throw new Error(res.error.message);
-  });
+  }, true);
 }

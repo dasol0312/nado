@@ -7,9 +7,9 @@ export const DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 // The schedule grid shows Monday first; these are day_of_week values in that order
 export const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
 
-// Matching and the schedule grid cover 9 AM to 11 PM
+// Matching and the schedule grid cover 9 AM to 9 PM
 export const DAY_START = 9 * 60;
-export const DAY_END = 23 * 60;
+export const DAY_END = 21 * 60;
 // Plans start within this many minutes from now
 export const HORIZON_MINUTES = 4 * 60;
 

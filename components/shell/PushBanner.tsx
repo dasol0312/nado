@@ -19,6 +19,7 @@ export default function PushBanner() {
       <div className="banner-in">
         <div className="b-app"><i className="appicon" aria-hidden="true" style={{ backgroundImage: "url(/mascot.webp)" }} />Nado · now</div>
         <div className="b-title">{banner.title}</div>
+        {p.invitation && <div>{p.invitation}</div>}
         <div className="small">
           {ctx && <><b>{ctx}</b> · </>}
           <span className="mono">{planRange(p)}</span> · {p.activity} · {p.members.length} people · {startsIn(p, now)}

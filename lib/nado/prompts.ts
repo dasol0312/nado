@@ -1,6 +1,26 @@
 // nado: Claude 프롬프트 2개
 // Claude는 학생 이름도 ID도 보지 않는다. 활동 이름과 방 정보만 본다.
 
+// Length targets for what Claude writes, so cards and sheets stay short on a phone.
+// The prompts ask for these; clip() is the safety net (a bit of slack, cut at a word, "…").
+export const LIMITS = {
+  invitation: 60,        // plan card title line
+  placeReason: 160,      // "why this works" under the map
+  icebreaker: 90,        // first question in the room / "Another question"
+  interestReason: 140,   // group-size reason in the interest sheet
+  placeDescription: 80,  // one-line place description
+} as const;
+
+export function clip(text: unknown, limit: number): string | null {
+  if (typeof text !== "string") return null;
+  const t = text.trim().replace(/\s+/g, " ");
+  if (!t) return null;
+  const hard = Math.round(limit * 1.3);
+  if (t.length <= hard) return t;
+  const cut = t.slice(0, hard - 1);
+  return `${cut.slice(0, Math.max(cut.lastIndexOf(" "), Math.floor(hard / 2))).replace(/[\s,;:.!?-]+$/, "")}…`;
+}
+
 // ① 활동 이름 정리 ------------------------------------------------------------
 
 export const NORMALIZE_SYSTEM = `You help nado, an app where university students pick activities they want to do with others.
@@ -50,12 +70,12 @@ export const WRITE_SYSTEM = `You are the host of nado, an app that opens small m
 the same activity at the same time. Nobody had to organize these meetups; you opened them.
 For each room you receive, write two things:
 
-- "invitation": one short, friendly line in nado's voice, like a friend texting. Under 12 words.
-  Mention the activity, the time (like "3" or "3:30"), and the place. No emojis.
+- "invitation": one short, friendly line in nado's voice, like a friend texting. Under 12 words
+  and at most ${LIMITS.invitation} characters. Mention the activity, the time (like "3" or "3:30"), and the place. No emojis.
   Example: "Boba at 3 at Boba Corner, anyone?"
 - "icebreaker": the first message you will post in the room's group chat. One easy, fun question
-  everyone can answer, based only on the shared activity. Under 15 words. At most one emoji.
-  Example: "What's your go-to boba order? 🧋"
+  everyone can answer, based only on the shared activity. Under 15 words and at most ${LIMITS.icebreaker} characters.
+  At most one emoji. Example: "What's your go-to boba order? 🧋"
 
 You know nothing about the students except that they all want this activity. Do not guess or
 mention anything about who they are. Write in English.
@@ -98,7 +118,7 @@ For each activity you receive, choose two places.
    studying at Bobst). Only name a specific business you are confident exists; if you are not sure,
    name a generic public spot instead (like "Washington Square Park lawn") and set "confident" to false.
 
-For each place give: "name" (at most 40 characters), "address", a one-line "description",
+For each place give: "name" (at most 40 characters), "address", a one-line "description" (at most ${LIMITS.placeDescription} characters),
 "ns" (the nearest north-south street, one of: ${NS_STREETS.join(", ")}),
 "ew" (the nearest east-west street, one of: ${EW_STREETS.join(", ")}),
 "far" (the compass direction N, S, E or W if it is more than a 10-minute walk from the park, otherwise ""),
@@ -139,15 +159,15 @@ export const PLAN_SYSTEM = `You are the host of nado, an app that opens small me
 want to do the same activity right now. Nobody organized these plans; you opened them.
 For each plan you receive, write three things:
 
-- "invitation": one short, friendly line, like a friend texting. Under 12 words. Mention the
+- "invitation": one short, friendly line, like a friend texting. Under 12 words and at most ${LIMITS.invitation} characters. Mention the
   activity, the start time (like "3:15"), and where to meet. No emojis.
   Example: "Boba at 3:15, meet at Kimmel?"
-- "place_reason": one or two short sentences addressed to the group, explaining why this plan works:
+- "place_reason": one or two short sentences (at most ${LIMITS.placeReason} characters in total) addressed to the group, explaining why this plan works:
   why the meeting spot is easy, and the walk to the venue if it is different. Plain English, no quotes.
   Example: "Kimmel's lobby is easy to find between classes, and Surreal Creamery is a four-minute walk with seats for four."
 - "icebreaker": the first question you will ask once they have found each other. One light, funny
   question specifically about the activity: its habits, hot takes, rituals or memorable moments.
-  Under 15 words. At most one emoji. Never ask about school, majors, hometowns or nationality.
+  Under 15 words and at most ${LIMITS.icebreaker} characters. At most one emoji. Never ask about school, majors, hometowns or nationality.
   Example: "What's your go-to boba order, sugar and ice level included?"
 
 You know nothing about the students except that they all want this activity. Do not guess or
@@ -204,6 +224,7 @@ A student typed an activity that isn't on the preset list. Think it through in t
    table or court size, cost and how awkward a big group of strangers would be. When unsure, go smaller.
 3. "min": a sensible default minimum, at least 2 and at most max.
 4. "reason": one or two plain sentences addressed to the student, explaining the group size.
+   At most ${LIMITS.interestReason} characters in total.
 
 Return only valid JSON, no text before or after, in exactly this shape:
 {"label":"Badminton","cat":"Sports","max":4,"min":2,"reason":"..."}`;
@@ -218,5 +239,6 @@ export function icebreakerUser(q: { people: number; label: string; previous: str
 Write one light, funny icebreaker question that is specifically about ${q.label}:
 its habits, hot takes, rituals, or memorable moments.
 Avoid generic questions about school, majors or hometowns${q.previous ? `, and don't repeat this one: "${q.previous}"` : ""}.
+Keep it under 15 words and at most ${LIMITS.icebreaker} characters.
 Reply in English with the question only, no quotes.`;
 }

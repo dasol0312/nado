@@ -3,12 +3,15 @@
 // While the app is open, matching runs on arrival and then every minute, exactly on the
 // minute (:00 seconds), in step with the server timer. The server runs at most once per
 // minute (claim_match_minute), so the timer and every open phone share one run.
-// The demo clock and "Check again now" run it too.
+// The demo clock runs it too. Right now shows a countdown to the next run (NextCheck).
 import { useEffect } from "react";
 import { useApp } from "../shell/AppProvider";
 
 const MINUTE = 60_000;
 const untilNextMinute = () => MINUTE - (Date.now() % MINUTE) + 250; // a beat after :00
+// For the countdown on Right now (NextCheck)
+export const EVERY = MINUTE;
+export const msToNextCheck = (t = Date.now()) => MINUTE - (t % MINUTE);
 
 export default function AutoMatch() {
   const { profile, runMatch } = useApp();

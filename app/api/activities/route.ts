@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { thinkAboutInterest, type InterestAnswer } from "@/lib/ai";
 import { CATEGORIES, isPreset, type Category } from "@/lib/catalog";
+import { checkInterestName } from "@/lib/interest-text";
+import { clip, LIMITS } from "@/lib/nado/prompts";
 import { dbError, fail, requireStudent } from "@/lib/server/api";
 import { createClient } from "@/lib/supabase/server";
 
@@ -15,9 +17,10 @@ export async function POST(req: Request) {
   const me = await requireStudent();
   if ("error" in me) return me.error;
   const body = await req.json().catch(() => null);
-  const raw = typeof body?.name === "string" ? body.name.trim().replace(/\s+/g, " ") : "";
   const rethink = body?.rethink === true;
-  if (!raw || raw.length > 40) return fail(400, "BAD_REQUEST", "Name must be 1-40 characters.");
+  const checked = checkInterestName(typeof body?.name === "string" ? body.name : "");
+  if (!checked.ok) return fail(400, "BAD_NAME", checked.message);
+  const raw = checked.name;
   const name = raw.toLowerCase();
 
   const sb = await createClient();
@@ -59,13 +62,13 @@ export async function POST(req: Request) {
 
 // Keep only answers that fit the rules in Nado 개발 명세서 (새 키워드 고민 · 검증)
 function checkAnswer(a: InterestAnswer | null) {
-  if (!a || !CATEGORIES.includes(a.cat)) return null;
+  if (!a || !(CATEGORIES as readonly string[]).includes(a.cat)) return null;
   const max = Math.max(2, Math.min(12, Math.round(Number(a.max)) || 4));
   return {
     label: String(a.label || "").slice(0, 40),
     category: a.cat as Category,
     max,
     min: Math.max(2, Math.min(max, Math.round(Number(a.min)) || 2)),
-    reason: String(a.reason || "").slice(0, 320),
+    reason: clip(a.reason, LIMITS.interestReason) ?? "",
   };
 }

@@ -7,25 +7,36 @@
 //   npm run seed:students -- --dry        only print what would be generated
 //
 // What it writes
-//   activities   the 16 presets from lib/activities.ts (upsert; places chosen by Claude are kept)
+//   activities   16 presets + 3 synthetic Place interests (insert missing; keep existing AI metadata)
 //   students     'Coral Owl'-style nicknames, is_sample = true, no email
 //   busy_blocks  class:  3–5 courses (major + core), NYU-style 75-min MW/TR blocks, some MWF 50-min,
 //                        Friday recitations for STEM, evening seminars/labs
 //                fixed:  part-time job (2 shifts), club (1 evening), internship (2 weekdays)
 //                never:  Sunday sleep-in, early nights, commuters, Saturdays away, Friday nights
-//   interests    2–5 per student with each student's own minimum group size, tilted by major
+//   interests    2–3 per student with each student's own minimum group size, tilted by major
 //
 // Deterministic: every random choice comes from md5(n + salt), so the same command always
-// produces the same campus, with the same student ids. Re-running replaces only sample
-// students (is_sample = true); judges and real sign-ups are left alone.
-// Run supabase/schema.sql first. Uses SUPABASE_SERVICE_ROLE_KEY if set, else the anon key
+// produces the same campus, with the same student ids. Re-running refreshes generated sample schedules/preferences without deleting
+// student rows, room memberships, or messages; real sign-ups are left alone.
+// Requires schema v4.1 plus the Place category migration. Uses a service key if set,
+// otherwise the publishable/legacy anon key
 // (works only while the demo RLS policies are open).
 
 import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { tmpdir } from "node:os";
 import { createClient } from "@supabase/supabase-js";
-import { ACTIVITY_CATALOG } from "../lib/activities";
+import { ACTIVITY_CATALOG, type PresetActivity } from "../lib/activities";
+
+// Synthetic place interests model students entering their own favorite hangout.
+// These are sample preferences, not new built-in app presets or verified venues.
+const SAMPLE_CATALOG: PresetActivity[] = [
+  ...ACTIVITY_CATALOG,
+  { name: "washington square park", label: "Washington Square Park", category: "Place", maxSize: 6, minDefault: 2 },
+  { name: "bobst library", label: "Bobst Library", category: "Place", maxSize: 4, minDefault: 2 },
+  { name: "high line", label: "High Line", category: "Place", maxSize: 6, minDefault: 2 },
+];
 
 // ---------- deterministic randomness ----------
 
@@ -166,7 +177,7 @@ function generateStudent(n: number): SampleStudent {
   const rc = rnd(n, "ncourses");
   const nCourses = rc < 0.15 ? 3 : rc < 0.75 ? 4 : 5;
   const ri = rnd(n, "ninterests");
-  const nInterests = ri < 0.2 ? 2 : ri < 0.55 ? 3 : ri < 0.85 ? 4 : 5;
+  const nInterests = ri < 0.4 ? 2 : 3; // Current app limit: 3
 
   const blocks: Block[] = [];
 
@@ -241,7 +252,7 @@ function generateStudent(n: number): SampleStudent {
   );
 
   // Interests and each student's minimum group size
-  const interests = sample(ACTIVITY_CATALOG, nInterests, n, "interest", (a) => a.name,
+  const interests = sample(SAMPLE_CATALOG, nInterests, n, "interest", (a) => a.name,
     (a) => (POPULARITY[a.name] ?? 0.5) * (major.boost.includes(a.name) ? 2.2 : 1),
   ).map((a) => {
     const r = rnd(n, `min:${a.name}`);
@@ -254,8 +265,8 @@ function generateStudent(n: number): SampleStudent {
 // ---------- output ----------
 
 const catalogRows = () =>
-  ACTIVITY_CATALOG.map((a) => ({ name: a.name, label: a.label, category: a.category, max_size: a.maxSize, min_default: a.minDefault }));
-const studentRows = (s: SampleStudent[]) => s.map((x) => ({ id: x.id, nickname: x.nickname, is_sample: true }));
+  SAMPLE_CATALOG.map((a) => ({ name: a.name, label: a.label, category: a.category, max_size: a.maxSize, min_default: a.minDefault }));
+const studentRows = (s: SampleStudent[]) => s.map((x) => ({ id: x.id, nickname: x.nickname, is_sample: true, is_judge: false, email: null }));
 const blockRows = (s: SampleStudent[]) =>
   s.flatMap((x) => x.blocks.map((b) => ({ student_id: x.id, kind: b.kind, day_of_week: b.day, start_time: b.start, end_time: b.end, label: b.label })));
 const interestRows = (s: SampleStudent[]) =>
@@ -311,10 +322,7 @@ begin;
 ${first ? `
 insert into activities (name, label, category, max_size, min_default) values
 ${catalog}
-on conflict (name) do update set label = excluded.label, category = excluded.category,
-  max_size = excluded.max_size, min_default = excluded.min_default;
-
-delete from students where is_sample;  -- busy_blocks, interests cascade
+on conflict (name) do nothing; -- Preserve existing AI metadata and sizes.
 ` : ""}
 create temp table campus_payload on commit drop as select $campus$${JSON.stringify(payload)}$campus$::jsonb as j;
 
@@ -322,7 +330,25 @@ create temp table campus_students on commit drop as
 select md5('nado-sample-' || (e->>0))::uuid as id, e->>1 as nickname, e->2 as blocks, e->3 as interests
 from campus_payload, jsonb_array_elements(j->'s') e;
 
-insert into students (id, nickname, is_sample) select id, nickname, true from campus_students;
+-- Refuse to overwrite any real account whose ID collides with a sample ID.
+do $$ begin
+  if exists (select 1 from campus_students c join students s on s.id = c.id where not s.is_sample) then
+    raise exception 'Sample ID collides with a real account';
+  end if;
+end $$;
+
+-- Avoid collisions with nicknames belonging to accounts outside this payload.
+update campus_students c set nickname = c.nickname || ' sample-' || c.id::text
+where exists (select 1 from students s where s.nickname = c.nickname and s.id <> c.id
+              and not exists (select 1 from campus_students other where other.id = s.id));
+
+insert into students (id, nickname, is_sample, is_judge)
+select id, nickname, true, false from campus_students
+on conflict (id) do update set is_judge = false; -- Keep existing identity/nickname and memberships.
+
+delete from busy_blocks where student_id in (select id from campus_students);
+delete from interests where student_id in (select id from campus_students);
+delete from activity_slots where student_id in (select id from campus_students);
 
 insert into busy_blocks (student_id, kind, day_of_week, start_time, end_time, label)
 select s.id,
@@ -333,8 +359,9 @@ from campus_students s, jsonb_array_elements_text(s.blocks) b,
      regexp_split_to_table(substr(split_part(b, ' ', 1), 2), '') d;
 
 insert into interests (student_id, activity, min_size)
-select s.id, substr(i, strpos(i, ' ') + 1), split_part(i, ' ', 1)::smallint
-from campus_students s, jsonb_array_elements_text(s.interests) i;
+select s.id, a.name, least(split_part(i, ' ', 1)::smallint, a.max_size)
+from campus_students s cross join lateral jsonb_array_elements_text(s.interests) i
+join activities a on a.name = substr(i, strpos(i, ' ') + 1);
 
 commit;
 `;
@@ -354,39 +381,101 @@ function writeSql(dir: string, students: SampleStudent[], parts: number) {
 
 async function writeSupabase(students: SampleStudent[]) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) throw new Error("Set NEXT_PUBLIC_SUPABASE_URL and a key in .env.local first.");
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) throw new Error("Set the Supabase URL and key in .env.local first.");
   const sb = createClient(url, key, { auth: { persistSession: false } });
   const check = (label: string, error: { message: string } | null) => {
-    if (error) throw new Error(`${label}: ${error.message}`);
+    if (error) throw new Error(label + ": " + error.message);
   };
-
-  const cat = await sb.from("activities").upsert(catalogRows(), { onConflict: "name" });
-  check("activities", cat.error);
-
-  // Nicknames already taken by judges or real students: give those samples an unused one
-  const taken = await sb.from("students").select("nickname").eq("is_sample", false);
-  check("students", taken.error);
-  const used = new Set((taken.data ?? []).map((r) => r.nickname as string));
-  let spare = students.length;
+  const targetIds = students.map((s) => s.id);
+  const read = async (table: string) => {
+    const all: Record<string, unknown>[] = [];
+    for (let i = 0; i < targetIds.length; i += 100) {
+      for (let offset = 0; ; offset += 500) {
+        let query = sb.from(table).select(table === "students" ? "id,nickname,is_sample,is_judge" : "*")
+          .in(table === "students" ? "id" : "student_id", targetIds.slice(i, i + 100));
+        query = table === "interests" ? query.order("student_id").order("activity") : query.order("id");
+        const r = await query.range(offset, offset + 499);
+        check(table, r.error);
+        all.push(...((r.data ?? []) as unknown as Record<string, unknown>[]));
+        if ((r.data?.length ?? 0) < 500) break;
+      }
+    }
+    return all;
+  };
+  // Preflight the changed schema before any mutation; never expose credentials.
+  for (const [table, columns] of [
+    ["students", "id,is_sample,is_judge,nickname"],
+    ["activities", "name,category,max_size"],
+    ["busy_blocks", "student_id,kind,day_of_week,start_time,end_time,label"],
+    ["interests", "student_id,activity,min_size"],
+  ]) {
+    const r = await sb.from(table).select(columns)
+      .in(table === "activities" ? "name" : table === "students" ? "id" : "student_id",
+        table === "activities" ? SAMPLE_CATALOG.map((a) => a.name) : targetIds.slice(0, 100)).limit(1);
+    check("schema preflight " + table, r.error);
+  }
+  const existing = await read("students");
+  const ids = new Set(students.map((s) => s.id));
+  if (existing.some((s) => ids.has(String(s.id)) && !s.is_sample)) throw new Error("Sample ID collides with a real account.");
+  const used = new Set(existing.map((s) => String(s.nickname)));
+  for (let i = 0; i < students.length; i += 100) {
+    const collisions = await sb.from("students").select("id,nickname")
+      .in("nickname", students.slice(i, i + 100).map((s) => s.nickname));
+    check("nickname collision check", collisions.error);
+    (collisions.data ?? []).forEach((s) => used.add(s.nickname));
+  }
   for (const s of students) {
-    while (used.has(s.nickname) && spare < NICKNAME_COUNT) s.nickname = nicknameAt(spare++);
+    const old = existing.find((r) => r.id === s.id);
+    if (old) s.nickname = String(old.nickname);
+    else if (used.has(s.nickname)) s.nickname += " sample-" + s.id;
     used.add(s.nickname);
   }
-
-  const del = await sb.from("students").delete().eq("is_sample", true); // busy_blocks, interests cascade
-  check("delete samples", del.error);
-
-  const insert = async (table: string, rows: Record<string, unknown>[]) => {
-    for (let i = 0; i < rows.length; i += 500) {
-      const res = await sb.from(table).insert(rows.slice(i, i + 500));
-      check(table, res.error);
+  // Back up target rows locally before replacing dependent preferences/schedules.
+  const backup: Record<string, Record<string, unknown>[]> = {};
+  for (const table of ["students", "busy_blocks", "interests", "activity_slots"]) {
+    const rows = table === "students" ? existing : await read(table);
+    backup[table] = rows.filter((r) => ids.has(String(table === "students" ? r.id : r.student_id)));
+  }
+  const backupPath = join(tmpdir(), "nado-sample-backup-" + Date.now() + ".json");
+  writeFileSync(backupPath, JSON.stringify(backup), { mode: 0o600 });
+  console.log("Target sample backup saved:", backupPath);
+  const cat = await sb.from("activities").upsert(catalogRows(), { onConflict: "name", ignoreDuplicates: true });
+  check("activities", cat.error);
+  const catalog = await sb.from("activities").select("name,max_size").in("name", SAMPLE_CATALOG.map((a) => a.name));
+  check("activities read", catalog.error);
+  const maxima = new Map((catalog.data ?? []).map((a) => [a.name as string, a.max_size as number]));
+  const insert = async (table: string, rows: Record<string, unknown>[], upsert = false) => {
+    for (let i = 0; i < rows.length; i += 200) {
+      const batch = rows.slice(i, i + 200);
+      const r = upsert ? await sb.from(table).upsert(batch, { onConflict: "id" }) : await sb.from(table).insert(batch);
+      check(table, r.error);
     }
   };
-  await insert("students", studentRows(students));
+  // Do not delete students: deleting them cascades room_members and messages.
+  await insert("students", studentRows(students), true);
+  for (const table of ["busy_blocks", "interests", "activity_slots"]) {
+    for (let i = 0; i < targetIds.length; i += 100) {
+      const r = await sb.from(table).delete().in("student_id", targetIds.slice(i, i + 100));
+      check("replace " + table, r.error);
+    }
+  }
   await insert("busy_blocks", blockRows(students));
-  await insert("interests", interestRows(students));
-  console.log("Supabase updated.");
+  await insert("interests", interestRows(students).map((r) => ({
+    ...r, min_size: Math.min(r.min_size, maxima.get(r.activity) ?? r.min_size),
+  })));
+  // Verify exact target data through paginated reads, not Supabase's 1,000-row default.
+  const actualStudents = (await read("students")).filter((r) => ids.has(String(r.id)));
+  const actualBlocks = (await read("busy_blocks")).filter((r) => ids.has(String(r.student_id)));
+  let interestCount = 0;
+  for (let i = 0; i < targetIds.length; i += 100) {
+    const counts = await sb.from("interests").select("student_id", { count: "exact", head: true }).in("student_id", targetIds.slice(i, i + 100));
+    check("verify interests", counts.error);
+    interestCount += counts.count ?? 0;
+  }
+  if (actualStudents.length !== students.length || actualBlocks.length !== blockRows(students).length ||
+      interestCount !== interestRows(students).length) throw new Error("Post-write sample counts differ; inspect the backup before retrying.");
+  console.log("Supabase verified:", actualStudents.length, "students,", actualBlocks.length, "busy blocks,", interestCount, "interests.");
 }
 
 async function main() {

@@ -18,7 +18,7 @@ main에서 이미 끝난 것(할 필요 없음):
 ## 0. 화면 쪽에서 매칭을 쓰는 방식
 
 ```
-POST /api/match            ← "Check again now", 프로필 변경, 방이 열린 뒤, 해산 1.8초 뒤
+POST /api/match            ← 매분 정각(앱이 열려 있을 때), 프로필 변경, 방이 열린 뒤, 해산 1.8초 뒤
 GET  /api/match            ← pg_cron 1분 타이머 (매 분 정각) (main 그대로)
         │  main의 runMatch: 방 + room_members(invited) 저장
         ▼
@@ -135,7 +135,7 @@ npm run typecheck && npm run lint && npm run build
 npm run dev
 # DB에 안 쓰고 매칭 결과만 보기 (월 11:50 기준):
 curl -X POST localhost:3000/api/match -H 'Content-Type: application/json' -d '{"dryRun":true,"now":"2026-10-26T11:50:00-04:00"}'
-# 화면 흐름: 로그인 → Profile에서 관심사 → Matches "Check again now" → Nado! → Groups에서 Confirm
+# 화면 흐름: 로그인 → Profile에서 관심사 → Matches에서 다음 매칭(매분 정각) 기다리기 → Nado! → Groups에서 Confirm
 ```
 
 관련 코드: `lib/ai.ts`, `lib/server/rooms.ts`, `lib/match/rules.ts`, `app/api/activities/`, `app/api/schedule/read/`. 궁금한 점은 다솔에게 물어봐 주세요.

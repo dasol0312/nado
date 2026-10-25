@@ -1,6 +1,6 @@
 "use client";
 
-// Weekly busy grid, Monday first, 9 AM-11 PM. Press and drag to paint the current mode;
+// Weekly busy grid, Monday first, 9 AM-9 PM. Press and drag to paint the current mode;
 // class and confirmed-plan cells can't be painted over. Today and the current hour are marked.
 import { useEffect, useRef } from "react";
 import { addDays, campusClock, DAY_END, DAY_SHORT, DAY_START, formatGridHour, formatShortDate, WEEK_ORDER } from "@/lib/time";

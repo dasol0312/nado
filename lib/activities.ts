@@ -3,7 +3,7 @@
 // Where to meet and where to go is not preset: Claude picks places per activity when a plan opens.
 // Claude also maps custom names onto these ("bubble tea" → "boba").
 
-export type ActivityCategory = "Sports" | "Cafe" | "Study" | "Food" | "Culture" | "Games" | "Other";
+export type ActivityCategory = "Sports" | "Cafe" | "Study" | "Food" | "Culture" | "Games" | "Place" | "Other";
 
 export type PresetActivity = {
   name: string;        // lowercase key used by matching

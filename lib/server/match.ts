@@ -15,10 +15,14 @@ import "server-only";
 import { openRooms, type Place, type Slot } from "@/lib/nado/matching";
 import { choosePlaces, writePlans, type PlacePair } from "@/lib/nado/plan";
 import { selectAll, type Db } from "@/lib/server/api";
+import { KEEP_DAYS } from "@/lib/plan-lists";
+import { settleRoom } from "@/lib/server/rooms";
 import { addDays, campusInstant, campusToday, dayOfWeek } from "@/lib/time";
 
 const LEAD_MINUTES = 20;      // 지금부터 최소 20분 뒤에 시작 (Nado! + confirm 할 시간)
 const CONFIRM_BEFORE = 10;    // 시작 10분 전까지 confirm
+const MAX_INVITES = 3;        // 한 학생이 동시에 가질 수 있는 초대(아직 안 끝난 방) 수
+const LAST_END = "21:00";     // 약속은 9시~21시 안에서만 (DB build_activity_slots 와 같은 범위)
 
 export type MatchOptions = { now?: string; dryRun?: boolean; force?: boolean };
 
@@ -41,6 +45,20 @@ export async function runMatch(sb: Db, opts: MatchOptions = {}) {
   const { date, time } = campusToday(at);
   const day = dayOfWeek(date);
 
+  // 끝난 지 30일 넘은 방은 지움 (채팅, 멤버도 같이). 데모 시계가 아니라 실제 시간 기준 (lib/plan-lists KEEP_DAYS)
+  if (!opts.dryRun) {
+    const old = await sb.from("rooms").delete().lt("ends_at", new Date(Date.now() - KEEP_DAYS * 24 * 3_600_000).toISOString());
+    if (old.error) throw new Error(old.error.message);
+  }
+
+  // 확정 마감이 지난 열린 플랜 정리: 최소 인원이면 방 열기, 아니면 해산 (응답 안 한 사람은 declined)
+  // → 응답 안 한 사람의 그 시간이 다시 비고, 초대 3개 제한에서도 빠짐
+  if (!opts.dryRun) {
+    const overdue = await sb.from("rooms").select("id").eq("status", "open").lte("confirm_by", at.toISOString());
+    if (overdue.error) throw new Error(overdue.error.message);
+    for (const r of overdue.data ?? []) await settleRoom(sb, r.id, at);
+  }
+
   const built = await sb.rpc("build_activity_slots", { p_now: at.toISOString() });
   if (built.error) throw new Error(built.error.message);
 
@@ -56,7 +74,7 @@ export async function runMatch(sb: Db, opts: MatchOptions = {}) {
       sb.from("students").select("id").eq("is_sample", false).order("id").range(from, to)),
     sb.from("activities").select("name, label, category, max_size, meet_place_id, dest_place_id"),
     sb.from("places").select("id, key, name"),
-    sb.from("rooms").select("activity, room_members(student_id, status)")
+    sb.from("rooms").select("activity, starts_at, ends_at, room_members(student_id, status)")
       .neq("status", "cancelled").gte("starts_at", dayStart).lt("starts_at", dayEnd),
   ]);
   for (const r of [activitiesRes, placesRes, todayRes]) if (r.error) throw new Error(r.error.message);
@@ -66,10 +84,16 @@ export async function runMatch(sb: Db, opts: MatchOptions = {}) {
   const summary = { now: { date, time, day }, freeSlots: built.data as number, rooms: [] as unknown[], skipped: [] as unknown[] };
 
   // 같은 활동 방은 하루에 하나: 오늘 이미 초대받았거나 들어간 (학생, 활동)은 뺌
+  // 초대 수: 아직 안 끝난 방의 초대(invited/joined/confirmed)를 학생별로 셈 → 3개면 더 안 줌
   const taken = new Set<string>();
-  for (const room of (todayRes.data ?? []) as { activity: string; room_members: { student_id: string; status: string }[] }[]) {
+  const invites: Record<string, number> = {};
+  type TodayRoom = { activity: string; starts_at: string; ends_at: string | null; room_members: { student_id: string; status: string }[] };
+  for (const room of (todayRes.data ?? []) as TodayRoom[]) {
+    const ends = room.ends_at ? new Date(room.ends_at) : new Date(new Date(room.starts_at).getTime() + 3_600_000);
     for (const m of room.room_members ?? []) {
-      if (["invited", "joined", "confirmed"].includes(m.status)) taken.add(`${m.student_id}|${room.activity}`);
+      if (!["invited", "joined", "confirmed"].includes(m.status)) continue;
+      taken.add(`${m.student_id}|${room.activity}`);
+      if (ends > at) invites[m.student_id] = (invites[m.student_id] ?? 0) + 1;
     }
   }
   const minSize = new Map(interestRows.map((i) => [`${i.student_id}|${i.activity}`, i.min_size]));
@@ -80,7 +104,7 @@ export async function runMatch(sb: Db, opts: MatchOptions = {}) {
       activity: s.activity,
       day,
       start: String(s.start_time).slice(0, 5),
-      end: String(s.end_time).slice(0, 5),
+      end: String(s.end_time).slice(0, 5) > LAST_END ? LAST_END : String(s.end_time).slice(0, 5),
       minSize: minSize.get(`${s.student_id}|${s.activity}`) ?? 2,
       priority: real.has(s.student_id) ? 1 : 0,
     }));
@@ -119,6 +143,7 @@ export async function runMatch(sb: Db, opts: MatchOptions = {}) {
     slots, places, now: { day, time }, activityMap: {},
     maxSizes: Object.fromEntries(activities.map((a) => [a.name, a.max_size])),
     leadMinutes: LEAD_MINUTES, alignToFree: true, requirePriority: true,
+    maxRoomsPerStudent: MAX_INVITES, roomsAlready: invites,
   });
   summary.skipped = skipped.filter((s) => wanted.includes(s.activity));
   if (!rooms.length) return summary;
@@ -167,17 +192,38 @@ export async function runMatch(sb: Db, opts: MatchOptions = {}) {
       summary.rooms.push(plan);
       continue;
     }
+    // Right before saving: another run (timer, a phone, the demo clock) may have just invited
+    // some of these people to a plan at the same time. Drop them; skip the plan if too few remain.
+    const busyNow = await alreadyBooked(sb, r.members, row.starts_at, row.ends_at);
+    const members = r.members.filter((m) => !busyNow.has(m));
+    if (members.length < r.minSize || !members.some((m) => real.has(m))) continue;
+    plan.members = members;
+    plan.real = members.filter((m) => real.has(m));
+
     const room = await sb.from("rooms").insert(row).select("id").single();
     if (room.error) {
       console.error("[match] room insert failed:", room.error);
       continue;
     }
-    const members = await sb.from("room_members")
-      .insert(r.members.map((student_id) => ({ room_id: room.data.id, student_id, status: "invited" })));
-    if (members.error) console.error("[match] member insert failed:", members.error);
+    const added = await sb.from("room_members")
+      .insert(members.map((student_id) => ({ room_id: room.data.id, student_id, status: "invited" })));
+    if (added.error) console.error("[match] member insert failed:", added.error);
     summary.rooms.push({ id: room.data.id, ...plan });
   }
   return summary;
+}
+
+// 이 사람들 중 [from, to) 와 겹치는 살아 있는 방에 이미 초대/참여 중인 사람
+async function alreadyBooked(sb: Db, ids: string[], from: string, to: string) {
+  const res = await sb.from("room_members")
+    .select("student_id, rooms!inner(starts_at, ends_at, status)")
+    .in("student_id", ids)
+    .in("status", ["invited", "joined", "confirmed"])
+    .neq("rooms.status", "cancelled")
+    .lt("rooms.starts_at", to)
+    .gt("rooms.ends_at", from);
+  if (res.error) throw new Error(res.error.message);
+  return new Set((res.data ?? []).map((m) => m.student_id as string));
 }
 
 // Claude가 고른 장소를 places 에 넣고 (이름이 같으면 같은 줄) activities 에 연결
