@@ -84,7 +84,7 @@ export default function LoginFlow() {
           <Mascot width={104} />
           <div className="wordmark">Nado</div>
         </div>
-        <p style={{ fontSize: 18, fontWeight: 500, textWrap: "balance" }}>Someone asks “who’s in?”<br />You say: nado.</p>
+        <p style={{ fontSize: 18, fontWeight: 500, textWrap: "balance" }}>Others ask, “Who’s in?”<br />You say: nado.</p>
         <p className="muted small">“Nado” means “me too” in Korean. We match NYU students who are free at the same time and like the same things. Only the AI sees your schedule and interests.</p>
       </div>
       <form className="stack" style={{ gap: 12 }} noValidate onSubmit={sendCode}>

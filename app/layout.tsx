@@ -12,7 +12,7 @@ const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["500", "600"], variabl
 
 export const metadata: Metadata = {
   title: "Nado",
-  description: "Someone asks “who’s in?” You say: nado. Plans with NYU students who are free when you are.",
+  description: "Others ask, “Who’s in?” You say: nado. Plans with NYU students who are free when you are.",
   icons: { icon: "/mascot.webp", apple: "/mascot.webp" },
   // Added to the Home Screen: full screen, content runs under the status bar (safe-area padding handles it)
   appleWebApp: { capable: true, title: "Nado", statusBarStyle: "black-translucent" },
