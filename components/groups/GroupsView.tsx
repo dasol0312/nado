@@ -3,6 +3,7 @@
 // Groups I said nado to, plus groups that dissolved. When everyone confirms, go straight in.
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
+import { activeGroups } from "@/lib/plan-lists";
 import { planRange, whenLabel } from "@/lib/plan-text";
 import { useApp } from "../shell/AppProvider";
 import { Mascot } from "../shell/icons";
@@ -11,7 +12,7 @@ import GroupCard from "./GroupCard";
 export default function GroupsView() {
   const { now, plans, plansReady, toast, runMatch } = useApp();
   const router = useRouter();
-  const active = plans.filter((p) => p.status !== "cancelled" && (p.myStatus === "joined" || p.myStatus === "confirmed"));
+  const active = activeGroups(plans);
   const past = plans.filter((p) => p.status === "cancelled" && p.myStatus !== "declined" && p.myStatus !== "invited").slice(-3).reverse();
 
   // A group that just opened → into the room

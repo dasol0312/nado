@@ -2,18 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { activeGroups, upcomingMatches } from "@/lib/plan-lists";
 import { useApp } from "./AppProvider";
 import { BellIcon, CalendarIcon, GroupIcon } from "./icons";
 
 export default function TabBar() {
   const path = usePathname();
-  const { plans } = useApp();
-  const newCount = plans.filter((p) => p.status === "open" && p.myStatus === "invited").length;
-  const toConfirm = plans.filter((p) => p.status === "open" && p.myStatus === "joined").length;
+  const { plans, now } = useApp();
+  const newCount = upcomingMatches(plans, now).length;
+  const groupCount = activeGroups(plans).length;
   const tabs = [
     { href: "/profile", label: "Profile", icon: <CalendarIcon />, n: 0 },
     { href: "/matches", label: "Matches", icon: <BellIcon />, n: newCount },
-    { href: "/groups", label: "Groups", icon: <GroupIcon />, n: toConfirm },
+    { href: "/groups", label: "Groups", icon: <GroupIcon />, n: groupCount },
   ];
   return (
     <nav className="tabbar">
