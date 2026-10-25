@@ -14,6 +14,7 @@ export interface ActivitySlot {
   day_of_week: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   start_time: string;
   end_time: string;
+  week_start: string | null; // Sunday of the week ("YYYY-MM-DD"); null = every week
 }
 
 export interface Place {

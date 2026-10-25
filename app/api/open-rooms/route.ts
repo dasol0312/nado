@@ -1,146 +1,150 @@
 // POST /api/open-rooms — the demo's "Let Claude open rooms" button.
 //
-// 1. Read today's activity_slots and places from Supabase
+// 1. Read that date's activity_slots (the week's saved times, else every-week times) and places
 // 2. lib/nado: Claude cleans activity names → code computes overlaps → Claude writes invitations
 // 3. Save each room to `rooms` and its members to `room_members` (status 'invited')
 //    → invited students' phones get the invitation card through Supabase Realtime
 //
-// Optional body for rehearsing: { "now": { "day": 0, "time": "10:30" } }
-// opens rooms as if it were that weekday/time (campus time, America/Los_Angeles).
+// Body (all optional):
+//   now: { date: "YYYY-MM-DD", time: "HH:MM" }  open rooms as if it were that campus date/time
+//   now: { day: 0-6, time: "HH:MM" }            same, for the next time that weekday comes around
+//   replace: true                               delete that date's rooms first and start over
+// Without `replace`, students already in a room that date aren't invited again,
+// so pressing the button twice is safe.
 
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { PRESET_ACTIVITIES } from "@/lib/activities";
 import { openRoomsWithClaude } from "@/lib/nado/claude";
-import type { Place as NadoPlace, Slot } from "@/lib/nado/matching";
-import type { ActivitySlot, Place } from "@/types/database";
+import type { Slot } from "@/lib/nado/matching";
+import { fail, type Db } from "@/lib/server/api";
+import { createClient } from "@/lib/supabase/server";
+import { addDays, campusInstant, campusToday, dayOfWeek, isDate, weekStartOf } from "@/lib/time";
 
 export const dynamic = "force-dynamic";
+// Claude makes two calls; give them time.
+export const maxDuration = 60;
 
-const TZ = "America/Los_Angeles";
-const PRESETS = ["boba", "basketball", "hiking", "musicals", "baseball", "coffee", "board games", "soccer", "study"];
+const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 
-export async function POST(req: Request) {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return NextResponse.json({ error: "ANTHROPIC_API_KEY is not set on the server." }, { status: 500 });
+// Resolve the body to a campus date and time, or null if it's invalid
+function resolveNow(raw: unknown): { date: string; time: string; replace: boolean } | null {
+  const body = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+  const replace = body.replace ?? false;
+  if (typeof replace !== "boolean") return null;
+
+  const today = campusToday();
+  if (body.now === undefined) return { ...today, replace };
+  if (!body.now || typeof body.now !== "object") return null;
+  const { date, day, time } = body.now as Record<string, unknown>;
+  if (typeof time !== "string" || !TIME.test(time)) return null;
+  if (isDate(date)) return { date, time, replace };
+  if (typeof day === "number" && Number.isInteger(day) && day >= 0 && day <= 6) {
+    return { date: addDays(today.date, (day - dayOfWeek(today.date) + 7) % 7), time, replace };
   }
-
-  const body = (await req.json().catch(() => ({}))) as { now?: { day?: unknown; time?: unknown } };
-  const campus = campusNow();
-  const now = validNow(body.now) ?? { day: campus.day, time: campus.time };
-  // Date of the target weekday: today, or the next time that weekday comes around
-  const date = addDays(campus.date, (now.day - campus.day + 7) % 7);
-
-  const supabase = await createClient();
-
-  const [slotsRes, placesRes] = await Promise.all([
-    supabase.from("activity_slots").select("*").eq("day_of_week", now.day),
-    supabase.from("places").select("*"),
-  ]);
-  if (slotsRes.error || placesRes.error) {
-    return NextResponse.json({ error: (slotsRes.error ?? placesRes.error)!.message }, { status: 500 });
-  }
-  const dbPlaces = (placesRes.data ?? []) as Place[];
-
-  // Students already in a room that day aren't invited again (pressing the button twice is safe)
-  const busy = await studentsWithRoomsOn(supabase, date);
-
-  const slots: Slot[] = ((slotsRes.data ?? []) as ActivitySlot[])
-    .filter((s) => !busy.has(s.student_id))
-    .map((s) => ({
-      studentId: s.student_id,
-      activity: s.activity,
-      day: s.day_of_week,
-      start: s.start_time.slice(0, 5),
-      end: s.end_time.slice(0, 5),
-    }));
-  const places: NadoPlace[] = dbPlaces.map((p) => ({ name: p.name, goodFor: p.good_for ?? [] }));
-
-  const result = await openRoomsWithClaude({ slots, places, now, presets: PRESETS });
-
-  const opened = [];
-  for (const r of result.rooms) {
-    const { data: room, error } = await supabase
-      .from("rooms")
-      .insert({
-        activity: r.activity,
-        starts_at: toTimestamp(date, r.start),
-        place_id: dbPlaces.find((p) => p.name === r.place)?.id ?? null,
-        invitation: r.invitation,
-        icebreaker: r.icebreaker,
-        color: r.color,
-        status: "open",
-      })
-      .select("id")
-      .single();
-    if (error || !room) {
-      console.error("[open-rooms] room insert failed:", error);
-      continue;
-    }
-    const { error: mErr } = await supabase
-      .from("room_members")
-      .insert(r.members.map((student_id) => ({ room_id: room.id, student_id, status: "invited" })));
-    if (mErr) console.error("[open-rooms] member insert failed:", mErr);
-    opened.push({ id: room.id, ...r });
-  }
-
-  return NextResponse.json({ now, date, opened, skipped: result.skipped, filtered: result.filtered });
+  return null;
 }
 
-// ---------- helpers ----------
+export async function POST(req: Request) {
+  if (!process.env.ANTHROPIC_API_KEY) return fail(500, "NO_API_KEY", "ANTHROPIC_API_KEY is not set on the server.");
 
-type Supa = Awaited<ReturnType<typeof createClient>>;
+  const target = resolveNow(await req.json().catch(() => null));
+  if (!target) {
+    return fail(400, "BAD_REQUEST", 'now must be { date: "YYYY-MM-DD" } or { day: 0-6 }, plus time: "HH:MM".');
+  }
+  const { date, time, replace } = target;
+  const day = dayOfWeek(date);
+  const week = weekStartOf(date);
+  const sb = await createClient();
 
-async function studentsWithRoomsOn(supabase: Supa, date: string): Promise<Set<string>> {
-  const { data } = await supabase
+  try {
+    if (replace) {
+      const removed = await sb
+        .from("rooms")
+        .delete()
+        .gte("starts_at", campusInstant(date, "00:00"))
+        .lt("starts_at", campusInstant(addDays(date, 1), "00:00"));
+      if (removed.error) throw new Error(removed.error.message);
+    }
+
+    const [slotsRes, placesRes, busy] = await Promise.all([
+      // This week's saved rows (any day) plus every-week rows for this weekday
+      sb
+        .from("activity_slots")
+        .select("student_id, activity, day_of_week, start_time, end_time, week_start")
+        .or(`week_start.eq.${week},and(week_start.is.null,day_of_week.eq.${day})`),
+      sb.from("places").select("id, name, good_for"),
+      studentsWithRoomsOn(sb, date),
+    ]);
+    if (slotsRes.error) throw new Error(slotsRes.error.message);
+    if (placesRes.error) throw new Error(placesRes.error.message);
+    if (!placesRes.data.length) return fail(500, "NO_PLACES", "Add meeting places first.");
+
+    // A week saved for (student, activity) replaces that pair's every-week times.
+    const savedThisWeek = new Set(slotsRes.data.filter((s) => s.week_start).map((s) => `${s.student_id}|${s.activity}`));
+    const slots: Slot[] = slotsRes.data
+      .filter((s) => s.day_of_week === day && !busy.has(s.student_id))
+      .filter((s) => s.week_start || !savedThisWeek.has(`${s.student_id}|${s.activity}`))
+      .map((s) => ({
+        studentId: s.student_id,
+        activity: s.activity,
+        day: s.day_of_week,
+        start: String(s.start_time).slice(0, 5),
+        end: String(s.end_time).slice(0, 5),
+      }));
+    const places = placesRes.data;
+
+    const result = await openRoomsWithClaude({
+      slots,
+      places: places.map((p) => ({ name: p.name, goodFor: p.good_for ?? [] })),
+      now: { day, time },
+      presets: PRESET_ACTIVITIES,
+    });
+
+    const placeIds = new Map(places.map((p) => [p.name, p.id]));
+    const opened = [];
+    for (const r of result.rooms) {
+      const room = await sb
+        .from("rooms")
+        .insert({
+          activity: r.activity,
+          starts_at: campusInstant(date, r.start),
+          place_id: placeIds.get(r.place) ?? null,
+          invitation: r.invitation,
+          icebreaker: r.icebreaker,
+          color: r.color,
+          status: "open",
+        })
+        .select("id")
+        .single();
+      if (room.error) {
+        console.error("[open-rooms] room insert failed:", room.error);
+        continue;
+      }
+      const members = await sb
+        .from("room_members")
+        .insert(r.members.map((student_id) => ({ room_id: room.data.id, student_id, status: "invited" })));
+      if (members.error) console.error("[open-rooms] member insert failed:", members.error);
+      opened.push({ id: room.data.id, ...r });
+    }
+
+    return NextResponse.json({ now: { date, day, time }, opened, skipped: result.skipped, filtered: result.filtered });
+  } catch (e) {
+    return fail(500, "DB_ERROR", (e as Error).message);
+  }
+}
+
+// Students already invited to (or in) a room that campus date
+async function studentsWithRoomsOn(sb: Db, date: string): Promise<Set<string>> {
+  const { data, error } = await sb
     .from("rooms")
     .select("room_members(student_id)")
     .neq("status", "cancelled")
-    .gte("starts_at", toTimestamp(date, "00:00"))
-    .lt("starts_at", toTimestamp(addDays(date, 1), "00:00"));
+    .gte("starts_at", campusInstant(date, "00:00"))
+    .lt("starts_at", campusInstant(addDays(date, 1), "00:00"));
+  if (error) throw new Error(error.message);
   const ids = new Set<string>();
   for (const room of (data ?? []) as { room_members: { student_id: string }[] }[]) {
     for (const m of room.room_members ?? []) ids.add(m.student_id);
   }
   return ids;
-}
-
-function validNow(v: { day?: unknown; time?: unknown } | undefined) {
-  if (!v) return null;
-  const { day, time } = v;
-  if (typeof day !== "number" || !Number.isInteger(day) || day < 0 || day > 6) return null;
-  if (typeof time !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return null;
-  return { day, time };
-}
-
-// Current campus date ("YYYY-MM-DD"), weekday (0=Sun) and time ("HH:MM")
-function campusNow() {
-  const parts = Object.fromEntries(
-    new Intl.DateTimeFormat("en-US", {
-      timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit",
-      hour: "2-digit", minute: "2-digit", weekday: "short", hourCycle: "h23",
-    }).formatToParts(new Date()).map((p) => [p.type, p.value]),
-  );
-  const day = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(parts.weekday);
-  return { date: `${parts.year}-${parts.month}-${parts.day}`, day, time: `${parts.hour}:${parts.minute}` };
-}
-
-function addDays(date: string, n: number) {
-  const d = new Date(`${date}T12:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + n);
-  return d.toISOString().slice(0, 10);
-}
-
-// Campus-local date + "HH:MM" → ISO timestamp with the right PDT/PST offset
-function toTimestamp(date: string, hhmm: string) {
-  const guess = new Date(`${date}T${hhmm}:00Z`);
-  const offset = tzOffsetMinutes(guess);
-  return new Date(guess.getTime() - offset * 60_000).toISOString();
-}
-
-function tzOffsetMinutes(d: Date) {
-  const name = new Intl.DateTimeFormat("en-US", { timeZone: TZ, timeZoneName: "longOffset" })
-    .formatToParts(d).find((p) => p.type === "timeZoneName")?.value ?? "GMT-08:00";
-  const m = name.match(/GMT([+-])(\d{2}):?(\d{2})?/);
-  if (!m) return -480;
-  return (m[1] === "-" ? -1 : 1) * (Number(m[2]) * 60 + Number(m[3] ?? 0));
 }

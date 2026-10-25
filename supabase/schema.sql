@@ -24,6 +24,8 @@ create table activity_slots (
   day_of_week smallint not null check (day_of_week between 0 and 6),  -- 0=일 1=월 ... 6=토
   start_time time not null,                  -- 21:00
   end_time time not null,                    -- 23:00
+  week_start date                            -- 그 주의 일요일. null = 매주 반복 (샘플 데이터)
+    check (week_start is null or extract(dow from week_start) = 0),
   check (end_time > start_time)
 );
 
@@ -70,6 +72,7 @@ create table messages (
 );
 
 create index on activity_slots (activity, day_of_week);
+create index on activity_slots (student_id, week_start);
 create index on room_members (student_id);
 create index on messages (room_id, created_at);
 

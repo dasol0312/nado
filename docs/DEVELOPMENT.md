@@ -38,7 +38,12 @@ and room information, never student names or IDs. In the demo, the
 ## Directory responsibilities
 
 - app/: App Router pages, layouts, and API route handlers.
-- components/: reusable UI.
+  - `/`: pick a demo student, pick and paint activities, invitations, demo controls
+  - `/rooms/[roomId]`: plan, Claude's icebreaker, quick replies, Time to meet! (Color Match)
+- components/: UI. WeekGrid is the drag-to-paint grid (hourly cells, 6 AM to midnight).
+  The demo student is kept per browser (localStorage), so two windows can be two students.
+- lib/: app helpers (campus time, preset activities, quick replies, room colors).
+  lib/server/ holds server-only API helpers.
 - lib/nado/: matching and room-opening logic from the AI teammate (Yerin).
   See lib/nado/README.md for usage.
 - lib/supabase/: browser and server Supabase client factories. The server
@@ -74,11 +79,25 @@ and privileged room creation.
 ## API
 
 - POST /api/open-rooms: opens rooms with lib/nado (the "Let Claude open rooms"
-  button). Saves rooms and invited members; see app/api/open-rooms/README.md.
+  button) for a campus date, using that week's saved times. Saves rooms and
+  invited members; students already in a room that date are skipped, and
+  `replace: true` starts the date over. See app/api/open-rooms/README.md.
+- POST /api/rooms/[roomId]/join: a student says nado!. Body `{ studentId }`.
+  The first join posts Claude's icebreaker as a message (student_id null); two
+  joins confirm the room.
+- POST /api/rooms/[roomId]/decline: "Not this time". Body `{ studentId }`.
+  Students who already joined use the Can't make it reply instead.
+- POST /api/rooms/[roomId]/reply: a quick reply. Body
+  `{ studentId, reply: "here" | "late" | "cant" }`. Joined students only; there
+  is no free-text chat. Replies are stored in messages (labels in lib/quick-replies.ts).
+- PUT /api/availability: replace one activity's times for one week. Body
+  `{ studentId, activity, weekStart: "YYYY-MM-DD" (Sunday), slots: [{ day, start: "HH:MM", end: "HH:MM" }] }`;
+  empty slots clears that week. Saved weeks replace the every-week rows
+  (week_start null, used by the sample data).
 
-Keep route handlers focused on request validation and responses; put shared
-logic in lib/. Browser Realtime subscriptions (invitation cards, nado! taps)
-can use the Supabase browser client.
+Writes go through these routes; the browser reads with the Supabase client and
+listens with Realtime (invitations, joins, replies). "Time to meet!" is a
+Realtime broadcast on the room channel, not stored in the database.
 
 ## Checks
 
