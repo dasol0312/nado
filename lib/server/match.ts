@@ -185,17 +185,38 @@ export async function runMatch(sb: Db, opts: MatchOptions = {}) {
       summary.rooms.push(plan);
       continue;
     }
+    // Right before saving: another run (timer, a phone, the demo clock) may have just invited
+    // some of these people to a plan at the same time. Drop them; skip the plan if too few remain.
+    const busyNow = await alreadyBooked(sb, r.members, row.starts_at, row.ends_at);
+    const members = r.members.filter((m) => !busyNow.has(m));
+    if (members.length < r.minSize || !members.some((m) => real.has(m))) continue;
+    plan.members = members;
+    plan.real = members.filter((m) => real.has(m));
+
     const room = await sb.from("rooms").insert(row).select("id").single();
     if (room.error) {
       console.error("[match] room insert failed:", room.error);
       continue;
     }
-    const members = await sb.from("room_members")
-      .insert(r.members.map((student_id) => ({ room_id: room.data.id, student_id, status: "invited" })));
-    if (members.error) console.error("[match] member insert failed:", members.error);
+    const added = await sb.from("room_members")
+      .insert(members.map((student_id) => ({ room_id: room.data.id, student_id, status: "invited" })));
+    if (added.error) console.error("[match] member insert failed:", added.error);
     summary.rooms.push({ id: room.data.id, ...plan });
   }
   return summary;
+}
+
+// 이 사람들 중 [from, to) 와 겹치는 살아 있는 방에 이미 초대/참여 중인 사람
+async function alreadyBooked(sb: Db, ids: string[], from: string, to: string) {
+  const res = await sb.from("room_members")
+    .select("student_id, rooms!inner(starts_at, ends_at, status)")
+    .in("student_id", ids)
+    .in("status", ["invited", "joined", "confirmed"])
+    .neq("rooms.status", "cancelled")
+    .lt("rooms.starts_at", to)
+    .gt("rooms.ends_at", from);
+  if (res.error) throw new Error(res.error.message);
+  return new Set((res.data ?? []).map((m) => m.student_id as string));
 }
 
 // Claude가 고른 장소를 places 에 넣고 (이름이 같으면 같은 줄) activities 에 연결
