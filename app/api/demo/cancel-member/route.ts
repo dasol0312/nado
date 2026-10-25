@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { settleRoom } from "@/lib/match/run";
+import { settleRoom } from "@/lib/server/rooms";
 import { dbError, demoNow, fail, isUuid } from "@/lib/server/api";
 import { demoOff } from "@/lib/server/demo";
 import { createClient } from "@/lib/supabase/server";

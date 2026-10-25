@@ -1,46 +1,12 @@
-// Built-in interests. supabase/seed.sql is generated from this file
-// (npx tsx scripts/generate-seed.ts), so change activities here.
-// meet = where the group finds each other (always an NYU building), dest = where the activity happens.
+// Categories and the icebreaker question bank. The 16 preset activities themselves live in
+// lib/activities.ts (ACTIVITY_CATALOG, the source of truth shared with scripts/generate-students.ts).
+// Places aren't preset: Claude picks them per activity when a plan opens (lib/nado/plan.ts).
+import { ACTIVITY_CATALOG, type ActivityCategory } from "./activities";
 
-export const CATEGORIES = ["Sports", "Cafe", "Study", "Food", "Culture", "Games", "Other"] as const;
-export type Category = (typeof CATEGORIES)[number];
+export const CATEGORIES = ["Sports", "Cafe", "Study", "Food", "Culture", "Games", "Other"] as const satisfies readonly ActivityCategory[];
+export type Category = ActivityCategory;
 
-export type CatalogActivity = {
-  name: string;
-  label: string;
-  category: Category;
-  max: number;
-  minDefault: number;
-  meet: string; // place key
-  dest: string; // place key
-};
-
-export const CATALOG: CatalogActivity[] = [
-  { name: "soccer", label: "Soccer", category: "Sports", max: 10, minDefault: 4, meet: "paulson", dest: "paulson" },
-  { name: "basketball", label: "Basketball", category: "Sports", max: 10, minDefault: 4, meet: "paulson", dest: "paulson" },
-  { name: "running", label: "Running", category: "Sports", max: 6, minDefault: 2, meet: "silver", dest: "wsp" },
-  { name: "climbing", label: "Climbing", category: "Sports", max: 4, minDefault: 2, meet: "paulson", dest: "paulson" },
-  { name: "boba", label: "Boba", category: "Cafe", max: 4, minDefault: 2, meet: "kimmel", dest: "surreal" },
-  { name: "coffee", label: "Coffee", category: "Cafe", max: 4, minDefault: 2, meet: "silver", dest: "think" },
-  { name: "bakery", label: "Bakery run", category: "Cafe", max: 4, minDefault: 2, meet: "silver", dest: "think" },
-  { name: "study", label: "Study session", category: "Study", max: 5, minDefault: 2, meet: "bobst", dest: "bobst" },
-  { name: "homework", label: "Problem sets", category: "Study", max: 4, minDefault: 2, meet: "bobst", dest: "bobst" },
-  { name: "ramen", label: "Ramen", category: "Food", max: 4, minDefault: 2, meet: "kimmel", dest: "karakatta" },
-  { name: "pizza", label: "Pizza", category: "Food", max: 6, minDefault: 2, meet: "kimmel", dest: "macdougal" },
-  { name: "korean food", label: "Korean food", category: "Food", max: 6, minDefault: 3, meet: "kimmel", dest: "macdougal" },
-  { name: "museum", label: "Museum trip", category: "Culture", max: 5, minDefault: 2, meet: "silver", dest: "arch" },
-  { name: "movie", label: "Movie night", category: "Culture", max: 5, minDefault: 2, meet: "kimmel", dest: "ifc" },
-  { name: "board games", label: "Board games", category: "Games", max: 6, minDefault: 3, meet: "kimmel", dest: "kimmel" },
-  { name: "chess", label: "Chess", category: "Games", max: 4, minDefault: 2, meet: "kimmel", dest: "chess" },
-];
-
-// Where a custom interest meets if nothing better is known
-export const CATEGORY_MEET: Record<Category, string> = {
-  Sports: "paulson", Cafe: "kimmel", Study: "bobst", Food: "kimmel", Culture: "silver", Games: "kimmel", Other: "kimmel",
-};
-export const CATEGORY_DEST: Record<Category, string> = {
-  Sports: "paulson", Cafe: "think", Study: "bobst", Food: "macdougal", Culture: "arch", Games: "kimmel", Other: "wsp",
-};
+export const isPreset = (name: string) => ACTIVITY_CATALOG.some((a) => a.name === name);
 
 // Activity-specific icebreakers, used when Claude isn't available
 const QUESTIONS: Record<string, string[]> = {
@@ -82,4 +48,3 @@ export function questionsFor(activity: string, category?: string): string[] {
   return QUESTIONS[activity] ?? (category ? QUESTIONS[`cat:${category}`] : undefined) ?? GENERAL;
 }
 
-export const catalogByName = (name: string) => CATALOG.find((a) => a.name === name);

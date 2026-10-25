@@ -33,5 +33,3 @@ const ADJ = ["Violet", "Yellow", "Green", "Blue", "Orange", "Pink", "Silver", "C
 const ANI = ["Otter", "Penguin", "Hedgehog", "Raccoon", "Squirrel", "Owl", "Panda", "Fox", "Cat", "Rabbit", "Alpaca", "Koala", "Hamster", "Duck"];
 export const randomNickname = () =>
   `${ADJ[Math.floor(Math.random() * ADJ.length)]} ${ANI[Math.floor(Math.random() * ANI.length)]}`;
-export const NICK_ADJ = ADJ;
-export const NICK_ANIMALS = ANI;

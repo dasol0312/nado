@@ -1,5 +1,6 @@
-// Meeting spots around Washington Square. `key` matches places.key in the DB.
-// x/y are positions on the sketch map in components/room/CampusMap.tsx (viewBox 360x262).
+// Landmarks on the sketch map (components/room/CampusMap.tsx, viewBox 360x262).
+// The DB's places are picked by Claude when a plan opens (lib/nado/plan.ts); when one has the
+// same name as a landmark here it gets these exact coordinates, otherwise it's pinned by its streets.
 export type PlaceInfo = {
   key: string;
   name: string;
@@ -44,6 +45,7 @@ export type PlaceRowLike = {
   key: string;
   name: string;
   address: string | null;
+  is_campus?: boolean | null;
   ns_street?: string | null;
   ew_street?: string | null;
   far?: string | null;
@@ -51,11 +53,15 @@ export type PlaceRowLike = {
 };
 export type MapPlace = PlaceInfo & { suggested: boolean; sure: boolean; far: "" | "N" | "S" | "E" | "W" };
 
-// A DB place → something the map can draw. Built-in spots use the fixed table above.
+const sameName = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+
+// A DB place → something the map can draw. "suggested" marks a venue Claude picked off campus
+// (the room screen says "check it's open before you go").
 export function mapPlace(row: PlaceRowLike | null | undefined): MapPlace | undefined {
   if (!row) return undefined;
-  const known = placeByKey(row.key);
-  if (known) return { ...known, suggested: false, sure: true, far: "" };
+  const suggested = row.is_campus === false;
+  const known = placeByKey(row.key) ?? PLACES.find((p) => sameName(p.name, row.name));
+  if (known) return { ...known, key: row.key, name: row.name, address: row.address ?? known.address, suggested, sure: row.confident !== false, far: "" };
   const far = (["N", "S", "E", "W"].includes(row.far ?? "") ? row.far : "") as MapPlace["far"];
   let x = (NS_X[row.ns_street ?? ""] ?? 168) + 6;
   let y = (EW_Y[row.ew_street ?? ""] ?? 222) + 8;
@@ -69,6 +75,6 @@ export function mapPlace(row: PlaceRowLike | null | undefined): MapPlace | undef
   return {
     key: row.key, name: row.name, address: row.address ?? "near Washington Square", campus: false,
     tag: far ? `${tag} ${ARROW[far]}` : tag, x, y, side: x < 250 ? "r" : "l",
-    suggested: true, sure: row.confident !== false, far,
+    suggested, sure: row.confident !== false, far,
   };
 }

@@ -1,6 +1,5 @@
 import "server-only";
 import { NextResponse } from "next/server";
-import { clockNow, type ClockRow } from "@/lib/clock";
 import { createClient } from "@/lib/supabase/server";
 import type { MemberStatus } from "@/types/database";
 import { sessionStudentId } from "./session";
@@ -12,6 +11,19 @@ export const fail = (status: number, error: string, message: string) =>
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const isUuid = (v: unknown): v is string => typeof v === "string" && UUID.test(v);
+
+// Supabase returns at most 1,000 rows per request, and drops the rest without an error.
+// Pages through a query until it's exhausted. Give the query a stable .order() so pages don't overlap.
+type Page<T> = PromiseLike<{ data: T[] | null; error: { message: string } | null }>;
+export async function selectAll<T>(page: (from: number, to: number) => Page<T>, size = 1000): Promise<T[]> {
+  const rows: T[] = [];
+  for (let from = 0; ; from += size) {
+    const { data, error } = await page(from, from + size - 1);
+    if (error) throw new Error(error.message);
+    rows.push(...(data ?? []));
+    if (!data || data.length < size) return rows;
+  }
+}
 
 // The signed-in student, or a 401 response to return
 export async function requireStudent(): Promise<{ studentId: string } | { error: NextResponse }> {
@@ -32,11 +44,11 @@ export async function membership(sb: Db, roomId: string, studentId: string) {
   return (res.data?.status as MemberStatus | undefined) ?? null;
 }
 
-// "Now" on the demo clock (real time when the clock isn't set)
+// "Now" on the demo clock (real time when the clock isn't set), from the DB's app_now()
 export async function demoNow(sb: Db) {
-  const { data, error } = await sb.from("app_clock").select("base, set_at, label").eq("id", 1).maybeSingle();
+  const { data, error } = await sb.rpc("app_now");
   if (error) throw new Error(error.message);
-  return clockNow(data as ClockRow | null);
+  return new Date(data as string);
 }
 
 export const dbError = (e: unknown) => fail(500, "DB_ERROR", (e as Error).message);

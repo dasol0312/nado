@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "seed:students": "tsx --env-file-if-exists=.env.local scripts/generate-students.ts"
   },
   "engines": {
     "node": ">=22.0.0"

@@ -3,7 +3,7 @@
 // Interest chips grouped by category, a custom interest form, and the min-size sheet.
 // Controlled: `value` in, onChange(value) out.
 import { useState } from "react";
-import { CATALOG, CATEGORIES } from "@/lib/catalog";
+import { CATEGORIES, isPreset } from "@/lib/catalog";
 import { useApp } from "../shell/AppProvider";
 import MinSizeSheet from "./MinSizeSheet";
 
@@ -103,7 +103,7 @@ export default function InterestPicker({ value, onChange, show = "all" }: { valu
           activity={sheet}
           initial={picked(sheet.name)?.min ?? Math.min(sheet.min_default, sheet.max_size)}
           exists={!!picked(sheet.name)}
-          custom={!CATALOG.some((c) => c.name === sheet.name)}
+          custom={!isPreset(sheet.name)}
           rethinking={rethinking}
           onRethink={() => rethink(sheet.name)}
           onClose={() => setOpen(null)}

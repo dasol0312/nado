@@ -27,7 +27,7 @@ export default function CampusMap({ meet, dest }: { meet: PlaceInfo; dest?: Plac
         <text x="4" y="20">W 8th St</text><text x="4" y="56">Waverly Pl</text><text x="4" y="186">W 4th St</text><text x="4" y="218">W 3rd St</text>
         <text x="171" y="10">5th Ave</text><text x="243" y="10">University Pl</text><text x="300" y="160">Mercer</text>
       </g>
-      {PLACES.filter((p) => p.key !== m.key && p.key !== d.key).map((p) => {
+      {PLACES.filter((p) => ![m, d].some((x) => x.key === p.key || x.name.toLowerCase() === p.name.toLowerCase())).map((p) => {
         const right = p.side !== "l";
         return (
           <g key={p.key}>

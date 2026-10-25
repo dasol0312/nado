@@ -11,7 +11,7 @@ import type { Activity, BusyKind, MemberStatus, Outfit, RoomStatus } from "@/typ
 
 export type Me = { id: string; nickname: string; email: string | null };
 export type PlaceRow = {
-  key: string; name: string; address: string | null;
+  key: string; name: string; address: string | null; is_campus: boolean | null;
   ns_street: string | null; ew_street: string | null; far: string | null; confident: boolean | null; // set for places Claude suggested
 };
 export type Member = { id: string; nickname: string; status: MemberStatus; outfit: Outfit | null; isSample: boolean; isMe: boolean };
@@ -75,7 +75,7 @@ export const useApp = () => {
 
 const PLAN_SELECT =
   "status, rooms!inner(id, activity, starts_at, ends_at, status, min_size, max_size, confirm_by, invitation, icebreaker, place_reason," +
-  " meet:places!rooms_place_id_fkey(key, name, address, ns_street, ew_street, far, confident), dest:places!rooms_dest_place_id_fkey(key, name, address, ns_street, ew_street, far, confident)," +
+  " meet:places!rooms_place_id_fkey(key, name, address, is_campus, ns_street, ew_street, far, confident), dest:places!rooms_dest_place_id_fkey(key, name, address, is_campus, ns_street, ew_street, far, confident)," +
   " room_members(student_id, status, outfit, students(nickname, is_sample)))";
 type RawPlan = {
   status: MemberStatus;
@@ -170,7 +170,7 @@ export default function AppProvider({ me, children }: { me: Me | null; children:
   const reloadActivities = useCallback(async () => {
     const { data } = await sb
       .from("activities")
-      .select("name, label, category, max_size, min_default, reason, by_ai, meet:places!activities_meet_place_id_fkey(key, name, address, ns_street, ew_street, far, confident), dest:places!activities_dest_place_id_fkey(key, name, address, ns_street, ew_street, far, confident)")
+      .select("name, label, category, max_size, min_default, reason, by_ai, meet:places!activities_meet_place_id_fkey(key, name, address, is_campus, ns_street, ew_street, far, confident), dest:places!activities_dest_place_id_fkey(key, name, address, is_campus, ns_street, ew_street, far, confident)")
       .order("created_at");
     if (data) setActivities(data as unknown as ActivityRow[]);
   }, [sb]);
@@ -282,8 +282,10 @@ export default function AppProvider({ me, children }: { me: Me | null; children:
     matchingRef.current = true;
     setMatching(true);
     try {
-      const res = await act("/api/match");
-      const mine = Array.isArray(res.mine) ? res.mine.length : 0;
+      // main's /api/match (lib/server/match.ts) returns the plans it opened, with their members
+      const res = await act("/api/match", {});
+      const opened = Array.isArray(res.rooms) ? (res.rooms as { members?: string[] }[]) : [];
+      const mine = opened.filter((r) => r.members?.includes(me.id)).length;
       try {
         sessionStorage.setItem("nado:lastMatch", String(Date.now()));
       } catch {}

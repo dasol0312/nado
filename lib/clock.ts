@@ -1,6 +1,6 @@
 // The demo clock. app_clock holds one row: when `base` is set, "now" is base plus
 // the real time passed since `set_at`, so both phones see the same moment.
-// Shared by the server (lib/server/clock.ts) and the browser (components/shell/AppProvider.tsx).
+// Same rule as the DB function app_now() (supabase/migrations/20261025_match_helpers.sql), for the browser.
 export type ClockRow = { base: string | null; set_at: string; label: string | null };
 
 export function clockNow(row: ClockRow | null, real = Date.now()): Date {

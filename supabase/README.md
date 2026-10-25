@@ -1,25 +1,30 @@
-# Supabase SQL sources
+# Supabase (schema v4.1)
 
-Schema v4 for the NYU flow: busy hours + interests → plans in the next 4 hours →
-Nado! → everyone confirms → room. Tables: students, places, activities,
-busy_blocks, interests, activity_slots, rooms, room_members, messages, app_clock.
+The team project `nado` is already set up with everything below. Don't re-run these on it unless you mean to reset the demo.
 
-Setting up an empty project, in the SQL Editor:
+## Setting up an empty project, in order
 
-1. Run `schema.sql` (drops and recreates every table)
-2. Run `seed.sql` (12 places around Washington Square, 16 activities, 46 sample students)
+1. `schema.sql`: tables (drops everything first)
+2. `migrations/20261025_match_helpers.sql` and `migrations/20261025_match_timer.sql`: DB functions (safe to re-run)
+3. `seed.sql`: empties all tables and adds the 16 preset activities
+4. `npm run seed:students`: 800 virtual NYU students (schedules + interests), from `scripts/generate-students.ts`
 
-Both delete existing data, so don't run them on a project people are using.
+`places` starts empty on purpose: Claude picks the meeting spot and venue for each activity when a plan opens, and saves them there.
 
-`seed.sql` is generated. Change activities in `lib/catalog.ts` and places in
-`lib/places.ts`, then run `npx tsx scripts/generate-seed.ts`. With
-`--env-file=.env.local ... --push` the script loads the same data through the
-API instead of the SQL Editor (it deletes everything first).
+## DB functions (call with `supabase.rpc`)
 
-`activity_slots` is no longer written by people: `/api/match` rebuilds it each
-run as "free time in the next 4 hours × interests", and `/api/open-rooms`
-(lib/nado) reads it as before. A dissolved room is `status = 'cancelled'`, which
-puts its members back into matching.
+| Function | What it does |
+|---|---|
+| `app_now()` | "Now", following the demo clock in `app_clock` |
+| `build_activity_slots(p_now?, p_hours = 4)` | Rebuilds `activity_slots`: each student's free time (campus time, 9–23h) in the next 4 hours × their interests, minus their busy blocks and rooms they're already in. Returns the row count. |
+| `reset_demo()` | Between judges: deletes rooms, chat, judge accounts, AI-added activities and Claude-picked places. Keeps the 800 samples and 16 presets. |
+| `start_match_timer(url, secret)` / `stop_match_timer()` | Turns the 5-minute matching timer (pg_cron → `GET /api/match`) on or off. Run in the SQL Editor after deploying. Not callable from the app. |
 
-The current RLS policies allow anonymous reads and writes for the demo. They
-are unsafe for real users.
+Computing free time in the database avoids the API's 1,000-row response limit (busy_blocks has ~10k rows).
+
+## Sample students
+
+- Deterministic: re-running `npm run seed:students` gives the same 800 students with the same ids. It replaces only `is_sample = true` rows.
+- `--sql out/` writes a pasteable `campus.sql` instead (add `--parts 4` to split it).
+
+RLS is wide open for the demo. Tighten it before real students sign up.

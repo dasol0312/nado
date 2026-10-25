@@ -19,6 +19,7 @@ Environment variables (get the keys by private message, never in GitHub or publi
 - ANTHROPIC_API_KEY: server-only secret. Never prefix it with NEXT_PUBLIC_
   and never expose it through browser code, logs, or API responses.
 - ANTHROPIC_WORKSPACE_ID: Anthropic workspace for the API key.
+- CRON_SECRET (optional): the 5-minute matching timer sends it to GET /api/match.
 - NADO_SESSION_SECRET: signs the login cookie. Required in production.
 - NADO_EMAIL_OTP: `1` emails real codes through Supabase Auth. Empty = demo
   mode (no email, any 6 digits work).
@@ -42,36 +43,40 @@ Rotate the API keys after the hackathon.
 7. 30 minutes before: outfit hints to find each other, a bright yellow screen if
    you give up, then an activity icebreaker
 
-### Matching (`POST /api/match`)
+### Matching (`/api/match`, `lib/server/match.ts`)
 
-1. `lib/match/snapshot.ts`: free time in the next 4 hours × interests →
-   `activity_slots` (this week's rows)
-2. `app/api/open-rooms` + `lib/nado` (Yerin's code, unchanged): Claude cleans
-   activity names, code finds overlaps, Claude writes invitations and icebreakers
-3. `lib/match/rules.ts`: drop members whose minimum is bigger than the group,
-   cap at the activity's max, set the meeting spot and the confirm deadline
+Runs every 5 minutes (Supabase pg_cron → GET), on "Check again now", after a
+profile change, when a room opens, and after a group dissolves (POST).
 
-`lib/match/rules.ts` also decides when a room opens or dissolves (`settle`).
-Claude sees only activity names and room information, never names or IDs.
+1. DB function `build_activity_slots()`: everyone's free time in the next 4 hours
+   × their interests, minus busy blocks and rooms they're in → `activity_slots`
+   (computed in the DB because the API returns at most 1,000 rows)
+2. Claude (`lib/nado/plan.ts`) picks a meeting spot and venue for activities
+   that don't have one yet, saved in `places`
+3. `lib/nado/matching.ts`: each student's minimum, the activity's maximum,
+   start 20+ minutes out (also right when classes end), only rooms with a real
+   student in them
+4. Claude writes the invitation, place reason and first icebreaker; rooms and
+   invited members are saved and reach phones through Realtime
+
+After that, `lib/match/rules.ts` (`settle`, used by `lib/server/rooms.ts`)
+opens a room when everyone has confirmed (or the confirm deadline passes with
+enough people) and dissolves it when it falls below its minimum. A dissolved
+room is `status = 'cancelled'`, which frees that hour for the next match.
+
+Claude sees only activity names and plan information, never names or IDs.
 
 ### Claude features still to connect
 
-`lib/ai.ts` has four functions that return null today, so the app uses
+`lib/ai.ts` has three functions that return null today, so the app uses
 fallbacks. Each one should call a new file in `lib/nado/`. Inputs, outputs,
 error codes and prompts: docs/HANDOFF-yerin.md.
 
 | lib/ai.ts | Used by | Fallback |
 |---|---|---|
 | `readAlbertSchedule(image)` | POST /api/schedule/read | error message; paint classes as Fixed |
-| `thinkAboutInterest(q)` | POST /api/activities | Other, max 4, meets at Kimmel |
-| `explainPlace(q)` | settleRoom (room opens) | rule-based sentence |
+| `thinkAboutInterest(q)` | POST /api/activities | Other, max 4 |
 | `nextIcebreaker(q)` | POST /api/rooms/[id]/icebreaker | question bank in `lib/catalog.ts` |
-
-Known limits from lib/nado (details and suggested changes in docs/HANDOFF-yerin.md):
-`/api/open-rooms` skips students who already have a plan that day, so a second
-plan or a rematch after a dissolve only appears for students with no other plan
-that day. Plans start 30+ minutes out on :00/:30, last 60-120 minutes, max 6
-people, and aren't scored by time of day or capped at 3 per student.
 
 ## Directory responsibilities
 
@@ -84,20 +89,22 @@ people, and aren't scored by time of day or capped at 3 per student.
 - components/: UI by screen (shell, auth, schedule, interests, matches, groups,
   room, find, demo). `shell/AppProvider.tsx` holds the signed-in student, the
   demo clock, my plans (live through Realtime), banners and toasts.
-- lib/: shared logic. `catalog.ts` (activities), `places.ts` (map spots),
-  `time.ts` (campus time, America/New_York), `match/` (matching), `server/`
-  (server-only helpers, session cookie), `ai.ts` (Claude seam).
+- lib/: shared logic. `activities.ts` (the 16 presets), `catalog.ts` (categories,
+  icebreaker bank), `places.ts` (map landmarks), `time.ts` (campus time,
+  America/New_York), `match/rules.ts` (room life cycle), `server/` (server-only:
+  matching run, rooms, session cookie), `ai.ts` (Claude seam).
 - lib/nado/: room-opening logic from the AI teammate (Yerin). Don't edit here
   without them; see lib/nado/README.md.
 - proxy.ts: sends signed-out visitors to /login (pages check the cookie again).
 - types/database.ts: row types matching supabase/schema.sql.
-- supabase/: schema, generated seed. See supabase/README.md.
-- scripts/generate-seed.ts: writes supabase/seed.sql.
+- supabase/: schema, DB functions (migrations/), seed. See supabase/README.md.
+- scripts/generate-students.ts: the 800 sample students (`npm run seed:students`).
 
 ## Database
 
 Tables: students, places, activities, busy_blocks, interests, activity_slots,
-rooms, room_members, messages, app_clock. Weekly times use campus local time;
+rooms, room_members, messages, app_clock. The team project already has 800
+sample students; don't re-run schema.sql or seed.sql on it. Weekly times use campus local time;
 day 0 is Sunday. Room starts_at is an absolute timestamp. `app_clock` is the
 shared demo clock, so both phones agree on "now".
 
@@ -116,14 +123,15 @@ All routes except auth and demo need the session cookie.
 - PUT /api/profile/interests `{ interests: [{ activity, min }] }`
 - POST /api/schedule/read (form data `image`) → `{ classes }`
 - POST /api/activities `{ name, rethink? }`: add a custom interest (or ask Claude again)
-- POST /api/match: find plans in the next 4 hours
+- POST /api/match `{ now?, dryRun? }`: find plans in the next 4 hours (GET is for the timer)
 - POST /api/rooms/[roomId]/join | confirm | cancel
 - POST /api/rooms/[roomId]/reply `{ reply: "here" | "late" | "cant" }`: quick replies (no free-text chat)
 - PUT/DELETE /api/rooms/[roomId]/outfit `{ outfit: { color, top, shoes, hair } }`
 - POST /api/rooms/[roomId]/icebreaker `{ previous }`
 - Demo: PUT /api/demo/clock `{ preset }`, POST /api/demo/quick-setup,
   POST /api/demo/sample-confirm `{ roomId }`, POST /api/demo/cancel-member
-  `{ roomId }`, POST /api/demo/reset
+  `{ roomId }`, POST /api/demo/reset (calls `reset_demo()`: deletes rooms,
+  judge/real accounts and Claude-picked places; keeps the 800 samples)
 
 The browser reads with the Supabase client and listens with Realtime. The glow
 screen and "found you" are Realtime broadcasts on `find-<roomId>`.
@@ -134,7 +142,7 @@ screen and "found you" are Realtime broadcasts on `find-<roomId>`.
 npm run typecheck
 npm run lint
 npm run build
-npx tsx lib/match/rules.test.ts      # group-size rules, snapshot, room life cycle
+npx tsx lib/match/rules.test.ts      # room life cycle (open / dissolve)
 npx tsx lib/nado/matching.test.ts    # lib/nado matching (no keys needed)
 npx tsx --env-file=.env.local lib/nado/try-claude.ts   # real Claude
 ```

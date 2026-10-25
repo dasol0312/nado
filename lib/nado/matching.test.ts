@@ -106,5 +106,67 @@ const MAP: ActivityMap = { "bubble tea": "boba", "pickup basketball": "basketbal
   check("rooms never start before now + 30min", rooms.every((r) => r.start >= "18:30"));
 }
 
+// 8. v4.1: 각자 원하는 최소 인원 ---------------------------------------------------------
+{
+  console.log("\n[8] v4.1: per-student minimum group size");
+  const base = { activity: "board games", day: 2, start: "15:00", end: "18:00" };
+  const slots: Slot[] = [
+    { ...base, studentId: "m1", minSize: 2 },
+    { ...base, studentId: "m2", minSize: 2 },
+    { ...base, studentId: "m3", minSize: 4 }, // only wants 4+
+  ];
+  const { rooms } = openRooms({ slots, places: PLACES, now: { day: 2, time: "12:00" }, activityMap: {} });
+  check("3 people: the one who wants 4+ is left out", rooms.length === 1 && rooms[0].members.join() === "m1,m2");
+  const four = openRooms({ slots: [...slots, { ...base, studentId: "m4", minSize: 3 }], places: PLACES,
+    now: { day: 2, time: "12:00" }, activityMap: {} }).rooms;
+  check("4 people: everyone fits, room minSize = 4", four[0]?.members.length === 4 && four[0]?.minSize === 4);
+}
+
+// 9. v4.1: 활동별 최대 인원 + 실제 학생 우선 -------------------------------------------------
+{
+  console.log("\n[9] v4.1: activity max size, real students first");
+  const slots: Slot[] = Array.from({ length: 6 }, (_, i) => ({
+    studentId: `s${i + 1}`, activity: "boba", day: 2, start: "15:00", end: "18:00",
+  }));
+  slots.push({ studentId: "zz_judge", activity: "boba", day: 2, start: "15:00", end: "16:00", priority: 1 });
+  const { rooms } = openRooms({ slots, places: PLACES, now: { day: 2, time: "12:00" }, activityMap: {},
+    maxSizes: { boba: 4 } });
+  check("boba rooms hold at most 4", rooms.every((r) => r.members.length <= 4 && r.maxSize === 4));
+  check("the judge gets a seat in the first room", rooms[0]?.members.includes("zz_judge"));
+}
+
+// 9b. v4.1: 샘플끼리만 있는 방은 안 연다 (심사위원과 묶일 사람을 남겨둠) --------------------------
+{
+  console.log("\n[9b] v4.1: requirePriority keeps the sample pool for real students");
+  const samples: Slot[] = Array.from({ length: 10 }, (_, i) => ({
+    studentId: `s${i + 1}`, activity: i < 5 ? "boba" : "coffee", day: 2, start: "15:00", end: "18:00",
+  }));
+  const none = openRooms({ slots: samples, places: PLACES, now: { day: 2, time: "12:00" }, activityMap: {},
+    requirePriority: true }).rooms;
+  check("only samples: no rooms", none.length === 0);
+  const judge: Slot = { studentId: "judge", activity: "coffee", day: 2, start: "16:00", end: "17:30", priority: 1 };
+  const some = openRooms({ slots: [...samples, judge], places: PLACES, now: { day: 2, time: "12:00" }, activityMap: {},
+    maxSizes: { coffee: 4 }, requirePriority: true }).rooms;
+  check("one room, with the judge, at the judge's time",
+    some.length === 1 && some[0].members.includes("judge") && some[0].start === "16:00" && some[0].members.length === 4);
+}
+
+// 10. v4.1: 수업 끝나자마자 시작 ------------------------------------------------------------
+{
+  console.log("\n[10] v4.1: start right when class ends (3:15)");
+  const slots: Slot[] = [
+    { studentId: "c1", activity: "boba", day: 1, start: "15:15", end: "17:00" },
+    { studentId: "c2", activity: "boba", day: 1, start: "15:15", end: "17:00" },
+    { studentId: "c3", activity: "boba", day: 1, start: "14:00", end: "17:00" },
+  ];
+  const aligned = openRooms({ slots, places: PLACES, now: { day: 1, time: "14:50" }, activityMap: {},
+    leadMinutes: 20, alignToFree: true }).rooms;
+  check("opens at 15:15 with all 3", aligned[0]?.start === "15:15" && aligned[0]?.members.length === 3,
+    aligned[0] ? `${aligned[0].start}-${aligned[0].end}` : "none");
+  check("ends on a clean time, at least 60 min", aligned[0]?.end === "17:00");
+  const old = openRooms({ slots, places: PLACES, now: { day: 1, time: "14:50" }, activityMap: {} }).rooms;
+  check("without alignToFree it waits for 15:30", old[0]?.start === "15:30");
+}
+
 console.log(failed ? `\n${failed} check(s) failed` : "\nAll checks passed 🎉");
 process.exit(failed ? 1 : 0);
