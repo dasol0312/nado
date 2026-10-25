@@ -83,11 +83,11 @@ export async function openRoomsWithClaude(input: {
 }
 
 // Claude에게 묻고 JSON으로 받기. 실패하면 null
-async function askJson<T>(system: string, user: string): Promise<T | null> {
+export async function askJson<T>(system: string, user: string, maxTokens = 2000): Promise<T | null> {
   try {
     const res = await getClient().messages.create({
       model: MODEL,
-      max_tokens: 2000,
+      max_tokens: maxTokens,
       system,
       messages: [{ role: "user", content: user }],
     });
