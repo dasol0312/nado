@@ -3,14 +3,14 @@
 // "Right now": plans starting in the next 4 hours that I haven't answered yet
 import { useEffect, useRef, useState } from "react";
 import { clockText } from "@/lib/plan-text";
-import { HORIZON_MINUTES } from "@/lib/time";
+import { campusClock, DAY_SHORT, HORIZON_MINUTES } from "@/lib/time";
 import { useApp } from "../shell/AppProvider";
 import ClockSheet from "../shell/ClockSheet";
 import { Mascot } from "../shell/icons";
 import PlanCard from "./PlanCard";
 
 export default function MatchesView() {
-  const { now, plans, plansReady, matching, runMatch, notifOn, setNotifOn, toast } = useApp();
+  const { now, clock, plans, plansReady, matching, runMatch, notifOn, setNotifOn, toast } = useApp();
   const [hash, setHash] = useState("");
   // Easter egg: tap the clock 5 times quickly to set the demo date and time
   const [clockOpen, setClockOpen] = useState(false);
@@ -41,7 +41,10 @@ export default function MatchesView() {
 
   return (
     <>
-      <div className="between"><h1>Right now</h1><span className="pill plain mono" onClick={tapClock} style={{ userSelect: "none" }}>{clockText(now)}</span></div>
+      <div className="between"><h1>Right now</h1><span className={`pill mono ${clock?.base ? "amber" : "plain"}`} onClick={tapClock} style={{ userSelect: "none" }}
+          title={clock?.base ? "Demo clock (New York time)" : "New York time"}>
+          {clock?.base ? `${DAY_SHORT[campusClock(now).day]} ${clockText(now)}` : clockText(now)}
+        </span></div>
       <p className="small muted" style={{ marginTop: -8 }}>Plans starting in the next 4 hours, built around when your classes end.</p>
       <div className="card between">
         <div>
