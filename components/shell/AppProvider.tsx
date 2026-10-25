@@ -4,6 +4,7 @@
 // Supabase Realtime), my profile, the activity catalog, push banners and toasts.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+import { isHiddenCategory } from "@/lib/catalog";
 import { clockNow, type ClockRow } from "@/lib/clock";
 import { createClient } from "@/lib/supabase/client";
 import { HORIZON_MINUTES } from "@/lib/time";
@@ -177,7 +178,7 @@ export default function AppProvider({ me, children }: { me: Me | null; children:
       .from("activities")
       .select("name, label, category, max_size, min_default, reason, by_ai, meet:places!activities_meet_place_id_fkey(key, name, address, is_campus, ns_street, ew_street, far, confident), dest:places!activities_dest_place_id_fkey(key, name, address, is_campus, ns_street, ew_street, far, confident)")
       .order("created_at");
-    if (data) setActivities(data as unknown as ActivityRow[]);
+    if (data) setActivities((data as unknown as ActivityRow[]).filter((a) => !isHiddenCategory(a.category)));
   }, [sb]);
   useEffect(() => {
     const t = setTimeout(reloadActivities, 0);

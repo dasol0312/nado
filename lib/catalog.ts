@@ -3,7 +3,13 @@
 // Places aren't preset: Claude picks them per activity when a plan opens (lib/nado/plan.ts).
 import { ACTIVITY_CATALOG, type ActivityCategory } from "./activities";
 
-export const CATEGORIES = ["Sports", "Cafe", "Study", "Food", "Culture", "Games", "Place", "Other"] as const satisfies readonly ActivityCategory[];
+export const CATEGORIES = ["Sports", "Cafe", "Food", "Culture", "Games", "Place", "Other"] as const satisfies readonly ActivityCategory[];
+
+// Hidden in the app (interest lists, Claude's choices, matching). The DB rows stay, so this is easy to undo.
+export const HIDDEN_CATEGORIES: readonly string[] = ["Study"];
+export const isHiddenCategory = (category?: string | null) => !!category && HIDDEN_CATEGORIES.includes(category);
+// A preset activity in a hidden category ("study", "homework")
+export const isHiddenActivity = (name: string) => isHiddenCategory(ACTIVITY_CATALOG.find((a) => a.name === name)?.category);
 export type Category = ActivityCategory;
 
 // A student picks at most this many interests (keeps invitations focused)

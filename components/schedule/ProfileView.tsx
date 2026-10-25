@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { sameBlocks, type Block } from "@/lib/schedule";
-import { MAX_INTERESTS } from "@/lib/catalog";
+import { isHiddenActivity, MAX_INTERESTS } from "@/lib/catalog";
 import InterestPicker, { type Picked } from "../interests/InterestPicker";
 import { useApp } from "../shell/AppProvider";
 import { Mascot } from "../shell/icons";
@@ -20,7 +20,7 @@ export default function ProfileView() {
     if (!profile) return;
     const t = setTimeout(() => {
       setBlocks((b) => b ?? profile.blocks);
-      setInterests((i) => i ?? profile.interests);
+      setInterests((i) => i ?? profile.interests.filter((x) => !isHiddenActivity(x.activity)));
     }, 0);
     return () => clearTimeout(t);
   }, [profile]);

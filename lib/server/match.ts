@@ -15,6 +15,7 @@ import "server-only";
 import { openRooms, type Place, type Slot } from "@/lib/nado/matching";
 import { choosePlaces, writePlans, type PlacePair } from "@/lib/nado/plan";
 import { selectAll, type Db } from "@/lib/server/api";
+import { isHiddenCategory } from "@/lib/catalog";
 import { addDays, campusInstant, campusToday, dayOfWeek } from "@/lib/time";
 
 const LEAD_MINUTES = 20;      // 지금부터 최소 20분 뒤에 시작 (Nado! + confirm 할 시간)
@@ -81,8 +82,10 @@ export async function runMatch(sb: Db, opts: MatchOptions = {}) {
     }
   }
   const minSize = new Map(interestRows.map((i) => [`${i.student_id}|${i.activity}`, i.min_size]));
+  // 앱에서 숨긴 카테고리(Study)는 매칭하지 않음
+  const hidden = new Set(activities.filter((a) => isHiddenCategory(a.category)).map((a) => a.name));
   const slots: Slot[] = slotRows
-    .filter((s) => !taken.has(`${s.student_id}|${s.activity}`))
+    .filter((s) => !taken.has(`${s.student_id}|${s.activity}`) && !hidden.has(s.activity))
     .map((s) => ({
       studentId: s.student_id,
       activity: s.activity,
