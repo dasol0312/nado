@@ -3,7 +3,7 @@
 // Interest chips grouped by category, a custom interest form, and the min-size sheet.
 // Controlled: `value` in, onChange(value) out.
 import { useState } from "react";
-import { CATEGORIES, isPreset } from "@/lib/catalog";
+import { CATEGORIES, isPreset, MAX_INTERESTS } from "@/lib/catalog";
 import { useApp } from "../shell/AppProvider";
 import MinSizeSheet from "./MinSizeSheet";
 
@@ -11,7 +11,9 @@ export type Picked = { activity: string; min: number };
 
 // show: "all" (every activity), "picked" (my interests), "unpicked" (add more)
 export default function InterestPicker({ value, onChange, show = "all" }: { value: Picked[]; onChange: (v: Picked[]) => void; show?: "all" | "picked" | "unpicked" }) {
-  const { activities, act, reloadActivities } = useApp();
+  const { activities, act, reloadActivities, toast } = useApp();
+  const full = value.length >= MAX_INTERESTS;
+  const fullMsg = `You can pick up to ${MAX_INTERESTS}. Remove one to add another.`;
   const [open, setOpen] = useState<string | null>(null);
   const [custom, setCustom] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
@@ -41,6 +43,7 @@ export default function InterestPicker({ value, onChange, show = "all" }: { valu
     e.preventDefault();
     const name = custom.trim();
     if (!name) return;
+    if (full) return setMsg({ text: fullMsg, error: true });
     setBusy(name);
     setMsg(null);
     try {
@@ -76,7 +79,8 @@ export default function InterestPicker({ value, onChange, show = "all" }: { valu
               {list.map((a) => {
                 const t = picked(a.name);
                 return (
-                  <button key={a.name} className={`chip${t ? " on" : ""}`} onClick={() => setOpen(a.name)}>
+                  <button key={a.name} className={`chip${t ? " on" : ""}${!t && full ? " off" : ""}`}
+                    onClick={() => (!t && full ? toast(fullMsg) : setOpen(a.name))}>
                     {a.name}{t && <small>min {t.min}</small>}
                   </button>
                 );
@@ -90,7 +94,7 @@ export default function InterestPicker({ value, onChange, show = "all" }: { valu
         <p className="small muted" style={{ marginTop: -4 }}>An activity or a place. Claude sorts it into a category.</p>
         <div className="row" style={{ flexWrap: "nowrap" }}>
           <input className="input" id="customKw" placeholder="e.g. badminton, Washington Square Park" maxLength={40} value={custom} onChange={(e) => setCustom(e.target.value)} />
-          <button className="btn sm" type="submit" disabled={!!busy}>{busy ? <span className="spinner" /> : "Add"}</button>
+          <button className="btn sm" type="submit" disabled={!!busy || full}>{busy ? <span className="spinner" /> : "Add"}</button>
         </div>
         {busy && (
           <div className="aibox">
@@ -112,6 +116,7 @@ export default function InterestPicker({ value, onChange, show = "all" }: { valu
           onClose={() => setOpen(null)}
           onRemove={() => { onChange(value.filter((v) => v.activity !== sheet.name)); setOpen(null); }}
           onSave={(min) => {
+            if (!picked(sheet.name) && full) return toast(fullMsg);
             onChange(picked(sheet.name) ? value.map((v) => (v.activity === sheet.name ? { ...v, min } : v)) : [...value, { activity: sheet.name, min }]);
             setOpen(null);
           }}

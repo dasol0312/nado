@@ -6,6 +6,9 @@ import { ACTIVITY_CATALOG, type ActivityCategory } from "./activities";
 export const CATEGORIES = ["Sports", "Cafe", "Study", "Food", "Culture", "Games", "Place", "Other"] as const satisfies readonly ActivityCategory[];
 export type Category = ActivityCategory;
 
+// A student picks at most this many interests (keeps invitations focused)
+export const MAX_INTERESTS = 3;
+
 export const isPreset = (name: string) => ACTIVITY_CATALOG.some((a) => a.name === name);
 
 // Activity-specific icebreakers, used when Claude isn't available

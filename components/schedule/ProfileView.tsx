@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { sameBlocks, type Block } from "@/lib/schedule";
+import { MAX_INTERESTS } from "@/lib/catalog";
 import InterestPicker, { type Picked } from "../interests/InterestPicker";
 import { useApp } from "../shell/AppProvider";
 import { Mascot } from "../shell/icons";
@@ -65,14 +66,14 @@ export default function ProfileView() {
         <button className="btn ghost sm" onClick={signOut}>Sign out</button>
       </div>
 
-      <div className="section-h"><h2>My current interests</h2><span className="small muted">{interests?.length ?? 0} picked</span></div>
+      <div className="section-h"><h2>My interests</h2><span className="pill plain mono">{interests?.length ?? 0} / {MAX_INTERESTS}</span></div>
       <div className="card stack" style={{ gap: 10 }}>
         {interests?.length
-          ? <><InterestPicker value={interests} onChange={changeInterests} show="picked" /><p className="small muted">Tap one to change its minimum group size or remove it.</p></>
-          : <p className="small muted">No interests yet. Pick some below.</p>}
+          ? <><InterestPicker value={interests} onChange={changeInterests} show="picked" /><p className="small muted">Pick up to {MAX_INTERESTS}. Tap one to change its minimum group size or remove it.</p></>
+          : <p className="small muted">Pick up to {MAX_INTERESTS} things you’d do with other students. Browse below.</p>}
       </div>
 
-      <div className="section-h"><h2>My interests</h2><span className="small muted">Tap to add</span></div>
+      <div className="section-h"><h2>Browse interests</h2><span className="small muted">{(interests?.length ?? 0) >= MAX_INTERESTS ? `${MAX_INTERESTS} of ${MAX_INTERESTS} picked` : "Tap to add"}</span></div>
       {interests
         ? <div className="card stack" style={{ gap: 12 }}><InterestPicker value={interests} onChange={changeInterests} /></div>
         : <div className="empty"><span className="spinner" /></div>}
