@@ -2,8 +2,9 @@
 
 // "Right now": plans starting in the next 4 hours that I haven't answered yet
 import { useEffect, useRef, useState } from "react";
+import { upcomingMatches } from "@/lib/plan-lists";
 import { clockText } from "@/lib/plan-text";
-import { campusClock, DAY_SHORT, HORIZON_MINUTES } from "@/lib/time";
+import { campusClock, DAY_SHORT } from "@/lib/time";
 import { useApp } from "../shell/AppProvider";
 import ClockSheet from "../shell/ClockSheet";
 import { Mascot } from "../shell/icons";
@@ -36,12 +37,12 @@ export default function MatchesView() {
     if (hash) document.getElementById(`plan-${hash}`)?.scrollIntoView({ block: "center" });
   }, [hash, plans]);
 
-  const horizon = now.getTime() + HORIZON_MINUTES * 60_000;
-  const list = plans.filter((p) => p.status === "open" && p.myStatus === "invited" && p.startsAt > now.getTime() && p.startsAt <= horizon);
+  const list = upcomingMatches(plans, now);
 
   return (
     <>
       <div className="between"><h1>Right now</h1><button type="button" className={`pill mono ${clock?.base ? "amber" : "plain"}`} onClick={tapClock}
+          onMouseDown={(e) => e.detail > 1 && e.preventDefault()} // fast clicks would select the text around it
           style={{ userSelect: "none", WebkitUserSelect: "none", cursor: "default" }}
           title={clock?.base ? "Demo clock (New York time)" : "New York time"}>
           {clock?.base ? `${DAY_SHORT[campusClock(now).day]} ${clockText(now)}` : clockText(now)}
