@@ -13,7 +13,8 @@ test("interest list: duplicates collapse (no primary-key error), cap applies aft
   assert.ok(r.ok);
   if (r.ok) assert.deepEqual(r.rows, [{ activity: "boba", min: 3 }, { activity: "chess", min: 2 }]);
   const four = [1, 2, 3, 4].map((i) => ({ activity: `a${i}`, min: 2 }));
-  assert.equal(parseInterestList(four, 3).ok, false);
+  const tooMany = parseInterestList(four, 3);
+  assert.equal(tooMany.ok ? "" : tooMany.code, "TOO_MANY");
 });
 
 test("Albert answer: wrong types and shapes are dropped instead of throwing", () => {

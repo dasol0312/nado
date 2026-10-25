@@ -12,12 +12,13 @@ import "server-only";
 // 샘플 학생끼리만 있는 방은 열지 않는다. 800명은 심사위원과 묶일 "캠퍼스"라서,
 // 미리 자기들끼리 방에 들어가 버리면 나중에 가입한 심사위원과 묶일 사람이 없어진다.
 
-import { openRooms, type Place, type Slot } from "@/lib/nado/matching";
+import { subtractBusy } from "@/lib/match/rules";
+import { openRooms, toHHMM, toMin, type Place, type Slot } from "@/lib/nado/matching";
 import { choosePlaces, writePlans, type PlacePair } from "@/lib/nado/plan";
 import { selectAll, type Db } from "@/lib/server/api";
 import { KEEP_DAYS } from "@/lib/plan-lists";
 import { settleRoom } from "@/lib/server/rooms";
-import { addDays, campusInstant, campusToday, dayOfWeek } from "@/lib/time";
+import { addDays, campusClock, campusInstant, campusToday, dayOfWeek } from "@/lib/time";
 
 const LEAD_MINUTES = 20;      // 지금부터 최소 20분 뒤에 시작 (Nado! + confirm 할 시간)
 const CONFIRM_BEFORE = 10;    // 시작 10분 전까지 confirm
@@ -65,7 +66,7 @@ export async function runMatch(sb: Db, opts: MatchOptions = {}) {
   // 2. 읽기 (1,000줄 넘는 표는 끝까지)
   const dayStart = campusInstant(date, "00:00");
   const dayEnd = campusInstant(addDays(date, 1), "00:00");
-  const [slotRows, interestRows, realRows, activitiesRes, placesRes, todayRes] = await Promise.all([
+  const [slotRows, interestRows, realRows, activitiesRes, placesRes, todayRes, leftRes] = await Promise.all([
     selectAll<{ student_id: string; activity: string; start_time: string; end_time: string }>((from, to) =>
       sb.from("activity_slots").select("student_id, activity, start_time, end_time").order("id").range(from, to)),
     selectAll<{ student_id: string; activity: string; min_size: number }>((from, to) =>
@@ -76,8 +77,11 @@ export async function runMatch(sb: Db, opts: MatchOptions = {}) {
     sb.from("places").select("id, key, name"),
     sb.from("rooms").select("activity, starts_at, ends_at, room_members(student_id, status)")
       .neq("status", "cancelled").gte("starts_at", dayStart).lt("starts_at", dayEnd),
+    // People who left a plan today ("Can't make it"), including plans that then dissolved
+    sb.from("room_members").select("student_id, rooms!inner(starts_at, ends_at)")
+      .eq("status", "cancelled").gte("rooms.starts_at", dayStart).lt("rooms.starts_at", dayEnd),
   ]);
-  for (const r of [activitiesRes, placesRes, todayRes]) if (r.error) throw new Error(r.error.message);
+  for (const r of [activitiesRes, placesRes, todayRes, leftRes]) if (r.error) throw new Error(r.error.message);
   const activities = activitiesRes.data ?? [];
   const real = new Set(realRows.map((r) => r.id));
 
@@ -96,18 +100,31 @@ export async function runMatch(sb: Db, opts: MatchOptions = {}) {
       if (ends > at) invites[m.student_id] = (invites[m.student_id] ?? 0) + 1;
     }
   }
+  // Hours someone said "Can't make it" to stay off-limits for them today
+  const leftBusy = new Map<string, { from: number; to: number }[]>();
+  for (const m of (leftRes.data ?? []) as unknown as { student_id: string; rooms: { starts_at: string; ends_at: string | null } }[]) {
+    const start = new Date(m.rooms.starts_at);
+    const end = m.rooms.ends_at ? new Date(m.rooms.ends_at) : new Date(start.getTime() + 3_600_000);
+    const list = leftBusy.get(m.student_id) ?? [];
+    list.push({ from: campusClock(start).minutes, to: campusClock(end).minutes || 24 * 60 });
+    leftBusy.set(m.student_id, list);
+  }
   const minSize = new Map(interestRows.map((i) => [`${i.student_id}|${i.activity}`, i.min_size]));
   const slots: Slot[] = slotRows
     .filter((s) => !taken.has(`${s.student_id}|${s.activity}`))
-    .map((s) => ({
-      studentId: s.student_id,
-      activity: s.activity,
-      day,
-      start: String(s.start_time).slice(0, 5),
-      end: String(s.end_time).slice(0, 5) > LAST_END ? LAST_END : String(s.end_time).slice(0, 5),
-      minSize: minSize.get(`${s.student_id}|${s.activity}`) ?? 2,
-      priority: real.has(s.student_id) ? 1 : 0,
-    }));
+    .flatMap((s) => {
+      const end = String(s.end_time).slice(0, 5) > LAST_END ? LAST_END : String(s.end_time).slice(0, 5);
+      const pieces = subtractBusy(toMin(String(s.start_time).slice(0, 5)), toMin(end), leftBusy.get(s.student_id) ?? []);
+      return pieces.map((p) => ({
+        studentId: s.student_id,
+        activity: s.activity,
+        day,
+        start: toHHMM(p.from),
+        end: toHHMM(p.to),
+        minSize: minSize.get(`${s.student_id}|${s.activity}`) ?? 2,
+        priority: real.has(s.student_id) ? 1 : 0,
+      }));
+    });
 
   // 실제 학생이 원하는 활동만 보면 됨. 없으면 Claude도 안 부르고 끝
   const wanted = [...new Set(slots.filter((s) => s.priority).map((s) => s.activity))].sort();

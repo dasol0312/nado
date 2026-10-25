@@ -22,7 +22,7 @@ export async function PUT(req: Request) {
       cap = Math.max(MAX_INTERESTS, (now.count ?? 0) - 1);
     }
     const parsed = parseInterestList(body?.interests, cap);
-    if (!parsed.ok) return fail(400, /up to/.test(parsed.message) ? "TOO_MANY" : "BAD_REQUEST", parsed.message);
+    if (!parsed.ok) return fail(400, parsed.code, parsed.message);
 
     const names = parsed.rows.map((r) => r.activity);
     const known = names.length ? await sb.from("activities").select("name, max_size").in("name", names) : { data: [], error: null };

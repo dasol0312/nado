@@ -1,4 +1,4 @@
-// POST /api/open-rooms — the demo's "Let Claude open rooms" button.
+// POST /api/open-rooms — the old "Let Claude open rooms" button. Retired (see POST below).
 //
 // 1. Read that date's activity_slots (the week's saved times, else every-week times) and places
 // 2. lib/nado: Claude cleans activity names → code computes overlaps → Claude writes invitations
@@ -45,6 +45,11 @@ function resolveNow(raw: unknown): { date: string; time: string; replace: boolea
 }
 
 export async function POST(req: Request) {
+  // Retired: the app matches through /api/match now. This older path could delete a day's
+  // rooms without signing in, so it's off unless NADO_LEGACY_OPEN_ROOMS=1 (local testing).
+  if (process.env.NADO_LEGACY_OPEN_ROOMS !== "1") {
+    return fail(410, "RETIRED", "Matching moved to /api/match. Set NADO_LEGACY_OPEN_ROOMS=1 to use this route locally.");
+  }
   if (!process.env.ANTHROPIC_API_KEY) return fail(500, "NO_API_KEY", "ANTHROPIC_API_KEY is not set on the server.");
 
   const target = resolveNow(await req.json().catch(() => null));

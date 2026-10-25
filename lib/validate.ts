@@ -1,21 +1,21 @@
 // Request/AI answer checks shared by API routes. Pure functions, tested in lib/validate.test.ts.
 
-export type Fail = { ok: false; message: string };
+export type Fail = { ok: false; code: "BAD_REQUEST" | "TOO_MANY"; message: string };
 
 // PUT /api/profile/interests body.interests → unique activities with an integer min.
 // The activity's own max is checked by the route against the DB.
 export function parseInterestList(list: unknown, max: number): { ok: true; rows: { activity: string; min: number }[] } | Fail {
-  if (!Array.isArray(list)) return { ok: false, message: "interests must be a list." };
+  if (!Array.isArray(list)) return { ok: false, code: "BAD_REQUEST", message: "interests must be a list." };
   const byName = new Map<string, number>();
   for (const item of list) {
-    if (!item || typeof item !== "object") return { ok: false, message: "Each interest needs an activity and a minimum." };
+    if (!item || typeof item !== "object") return { ok: false, code: "BAD_REQUEST", message: "Each interest needs an activity and a minimum." };
     const { activity, min } = item as { activity?: unknown; min?: unknown };
     if (typeof activity !== "string" || !activity.trim() || activity.length > 40 || !Number.isInteger(min)) {
-      return { ok: false, message: "Each interest needs an activity and a minimum." };
+      return { ok: false, code: "BAD_REQUEST", message: "Each interest needs an activity and a minimum." };
     }
     byName.set(activity, min as number); // a repeated activity keeps the last minimum
   }
-  if (byName.size > max) return { ok: false, message: `Pick up to ${max} interests.` };
+  if (byName.size > max) return { ok: false, code: "TOO_MANY", message: `Pick up to ${max} interests.` };
   return { ok: true, rows: [...byName].map(([activity, min]) => ({ activity, min })) };
 }
 

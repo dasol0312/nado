@@ -250,27 +250,45 @@ export default function AppProvider({ me, children }: { me: Me | null; children:
     return fresh.map((p) => p.id);
   }, [sb, me, showBanner]);
 
-  // Live updates: plans, groups, and the demo clock
+  // Live updates. Only what concerns me: my own member rows (new invites, my answers), the
+  // plans I'm in right now (others confirming, a room opening or dissolving), and the demo clock.
+  const reloadTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const reloadSoon = useCallback(() => {
+    clearTimeout(reloadTimer.current);
+    reloadTimer.current = setTimeout(() => reloadPlans(), 200);
+  }, [reloadPlans]);
   useEffect(() => {
     if (!me) return;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const soon = () => {
-      clearTimeout(timer);
-      timer = setTimeout(() => reloadPlans(), 200);
-    };
     const first = setTimeout(() => reloadPlans(), 0);
     const ch: RealtimeChannel = sb
-      .channel(`app-${me.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "room_members" }, soon)
-      .on("postgres_changes", { event: "*", schema: "public", table: "rooms" }, soon)
+      .channel(`me-${me.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "room_members", filter: `student_id=eq.${me.id}` }, reloadSoon)
       .on("postgres_changes", { event: "*", schema: "public", table: "app_clock" }, (p) => applyClock(p.new as ClockRow))
       .subscribe();
     return () => {
       clearTimeout(first);
-      clearTimeout(timer);
+      clearTimeout(reloadTimer.current);
       sb.removeChannel(ch);
     };
-  }, [sb, me, reloadPlans, applyClock]);
+  }, [sb, me, reloadPlans, reloadSoon, applyClock]);
+
+  // Plans still ahead or running (the realtime "in" filter takes up to 100 ids)
+  const nowMs = now.getTime();
+  const watchIds = useMemo(
+    () => plans.filter((p) => p.status !== "cancelled" && p.endsAt > nowMs).map((p) => p.id).sort().slice(0, 100).join(","),
+    [plans, nowMs],
+  );
+  useEffect(() => {
+    if (!me || !watchIds) return;
+    const ch: RealtimeChannel = sb
+      .channel(`plans-${me.id}-${[...watchIds].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7)}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "room_members", filter: `room_id=in.(${watchIds})` }, reloadSoon)
+      .on("postgres_changes", { event: "*", schema: "public", table: "rooms", filter: `id=in.(${watchIds})` }, reloadSoon)
+      .subscribe();
+    return () => {
+      sb.removeChannel(ch);
+    };
+  }, [sb, me, watchIds, reloadSoon]);
 
   const act = useCallback(async (path: string, body?: unknown, method = "POST") => {
     const res = await fetch(path, {

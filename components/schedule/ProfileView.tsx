@@ -25,20 +25,40 @@ export default function ProfileView() {
     return () => clearTimeout(t);
   }, [profile]);
 
-  // 0.5 s after the last change: save, then re-run matching
+  // 0.5 s after the last change: save, then re-run matching.
+  // One request at a time per path, always with the newest edit, so a slow earlier save
+  // can't land after (and overwrite) a newer one. Timers keep running if you leave the page.
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
-  const save = useCallback((path: string, body: unknown) => {
-    clearTimeout(saveTimers.current[path]);
-    saveTimers.current[path] = setTimeout(async () => {
-      try {
-        await act(path, body, "PUT");
-        await reloadProfile();
-        runMatch({ title: "A plan fits the next few hours", quietIfNone: true });
-      } catch (e) {
-        toast((e as Error).message);
+  const latest = useRef<Record<string, unknown>>({});
+  const saving = useRef<Record<string, boolean>>({});
+  const flush = useCallback(async (path: string) => {
+    if (saving.current[path]) return; // the running save picks up the newest edit when it finishes
+    saving.current[path] = true;
+    let saved = false;
+    try {
+      while (path in latest.current) {
+        const body = latest.current[path];
+        delete latest.current[path];
+        try {
+          await act(path, body, "PUT");
+          saved = true;
+        } catch (e) {
+          toast((e as Error).message);
+        }
       }
-    }, 500);
+    } finally {
+      saving.current[path] = false;
+    }
+    if (saved) {
+      await reloadProfile();
+      runMatch({ title: "A plan fits the next few hours", quietIfNone: true });
+    }
   }, [act, reloadProfile, runMatch, toast]);
+  const save = useCallback((path: string, body: unknown) => {
+    latest.current[path] = body;
+    clearTimeout(saveTimers.current[path]);
+    saveTimers.current[path] = setTimeout(() => flush(path), 500);
+  }, [flush]);
 
   const changeBlocks = (b: Block[]) => {
     setBlocks(b);

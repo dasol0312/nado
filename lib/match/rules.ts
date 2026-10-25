@@ -32,3 +32,16 @@ export function settle(input: {
   }
   return { action: "wait" };
 }
+
+// A free window minus busy ranges (minutes since midnight), keeping pieces of at least `min` minutes.
+// Used to keep a student who left a plan ("Can't make it") out of that hour when rematching.
+export function subtractBusy(from: number, to: number, busy: { from: number; to: number }[], min = 60) {
+  let pieces = [{ from, to }];
+  for (const b of busy) {
+    pieces = pieces.flatMap((p) => (b.to <= p.from || b.from >= p.to ? [p] : [
+      ...(b.from > p.from ? [{ from: p.from, to: b.from }] : []),
+      ...(b.to < p.to ? [{ from: b.to, to: p.to }] : []),
+    ]));
+  }
+  return pieces.filter((p) => p.to - p.from >= min);
+}
