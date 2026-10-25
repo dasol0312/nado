@@ -1,16 +1,29 @@
-# Supabase SQL sources
+# Supabase (schema v4.1)
 
-Schema v3 and sample data are already installed remotely, as reported by the
-team. The tables are students, activity_slots, places, rooms, room_members,
-and messages.
+The team project `nado` is already set up with everything below. Don't re-run these on it unless you mean to reset the demo.
 
-schema.sql and seed.sql contain the scripts supplied by the team.
-They are source copies of the existing demo setup. Do not run them against
-the team's project: schema.sql drops all tables and seed.sql truncates all
-data. Run them only on a new, empty Supabase project (schema.sql, then seed.sql).
+## Setting up an empty project, in order
 
-The current RLS policies allow broad anonymous reads and writes for the demo.
-They are unsafe for real users or public production use.
+1. `schema.sql`: tables (drops everything first)
+2. `migrations/20261025_match_helpers.sql`: DB functions (safe to re-run)
+3. `seed.sql`: empties all tables and adds the 16 preset activities
+4. `npm run seed:students`: 800 virtual NYU students (schedules + interests), from `scripts/generate-students.ts`
 
-See ../docs/DEVELOPMENT.md for client setup, API boundaries, and security work.
-Keep migrations/ for future reviewed database changes.
+`places` starts empty on purpose: Claude picks the meeting spot and venue for each activity when a plan opens, and saves them there.
+
+## DB functions (call with `supabase.rpc`)
+
+| Function | What it does |
+|---|---|
+| `app_now()` | "Now", following the demo clock in `app_clock` |
+| `build_activity_slots(p_now?, p_hours = 4)` | Rebuilds `activity_slots`: each student's free time (campus time, 9–23h) in the next 4 hours × their interests, minus their busy blocks and rooms they're already in. Returns the row count. |
+| `reset_demo()` | Between judges: deletes rooms, chat, judge accounts, AI-added activities and Claude-picked places. Keeps the 800 samples and 16 presets. |
+
+Computing free time in the database avoids the API's 1,000-row response limit (busy_blocks has ~10k rows).
+
+## Sample students
+
+- Deterministic: re-running `npm run seed:students` gives the same 800 students with the same ids. It replaces only `is_sample = true` rows.
+- `--sql out/` writes a pasteable `campus.sql` instead (add `--parts 4` to split it).
+
+RLS is wide open for the demo. Tighten it before real students sign up.
