@@ -104,7 +104,7 @@ error codes and prompts: docs/HANDOFF-yerin.md.
 
 Tables: students, places, activities, busy_blocks, interests, activity_slots,
 rooms, room_members, messages, app_clock. The team project already has 800
-sample students; don't re-run schema.sql or seed.sql on it. Weekly times use campus local time;
+sample students; don't re-run schema.sql on it. Weekly times use campus local time;
 day 0 is Sunday. Room starts_at is an absolute timestamp. `app_clock` is the
 shared demo clock, so both phones agree on "now".
 
