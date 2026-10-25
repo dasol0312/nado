@@ -1,16 +1,28 @@
 "use client";
 
 // "Right now": plans starting in the next 4 hours that I haven't answered yet
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { clockText } from "@/lib/plan-text";
 import { HORIZON_MINUTES } from "@/lib/time";
 import { useApp } from "../shell/AppProvider";
+import ClockSheet from "../shell/ClockSheet";
 import { Mascot } from "../shell/icons";
 import PlanCard from "./PlanCard";
 
 export default function MatchesView() {
   const { now, plans, plansReady, matching, runMatch, notifOn, setNotifOn, toast } = useApp();
   const [hash, setHash] = useState("");
+  // Easter egg: tap the clock 5 times quickly to set the demo date and time
+  const [clockOpen, setClockOpen] = useState(false);
+  const taps = useRef<number[]>([]);
+  const tapClock = () => {
+    const t = Date.now();
+    taps.current = [...taps.current.filter((x) => t - x < 2000), t];
+    if (taps.current.length >= 5) {
+      taps.current = [];
+      setClockOpen(true);
+    }
+  };
   useEffect(() => {
     const read = () => setHash(window.location.hash.replace("#plan-", ""));
     const t = setTimeout(read, 0);
@@ -29,7 +41,7 @@ export default function MatchesView() {
 
   return (
     <>
-      <div className="between"><h1>Right now</h1><span className="pill plain mono">{clockText(now)}</span></div>
+      <div className="between"><h1>Right now</h1><span className="pill plain mono" onClick={tapClock} style={{ userSelect: "none" }}>{clockText(now)}</span></div>
       <p className="small muted" style={{ marginTop: -8 }}>Plans starting in the next 4 hours, built around when your classes end.</p>
       <div className="card between">
         <div>
@@ -57,6 +69,7 @@ export default function MatchesView() {
         </div>
       )}
       <p className="small muted" style={{ textAlign: "center" }}>Plans never overlap in time. You won’t know who’s in the group until you meet.</p>
+      {clockOpen && <ClockSheet onClose={() => setClockOpen(false)} />}
     </>
   );
 }

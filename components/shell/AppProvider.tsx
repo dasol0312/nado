@@ -45,6 +45,7 @@ type Ctx = {
   now: Date; // re-rendered every 20 s
   getNow: () => Date;
   clock: ClockRow | null;
+  reloadClock: () => Promise<void>;
   plans: Plan[];
   plansReady: boolean;
   activities: ActivityRow[];
@@ -161,6 +162,10 @@ export default function AppProvider({ me, children }: { me: Me | null; children:
     setClock(row);
     setNow(clockNow(row));
   }, []);
+  const reloadClock = useCallback(async () => {
+    const { data } = await sb.from("app_clock").select("base, set_at, label").eq("id", 1).maybeSingle();
+    applyClock(data as ClockRow | null);
+  }, [sb, applyClock]);
   useEffect(() => {
     sb.from("app_clock").select("base, set_at, label").eq("id", 1).maybeSingle().then(({ data }) => applyClock(data as ClockRow | null));
     const t = setInterval(() => setNow(clockNow(clockRef.current)), 20_000);
@@ -301,7 +306,7 @@ export default function AppProvider({ me, children }: { me: Me | null; children:
   }, [me, act, reloadPlans, toast]);
 
   const value: Ctx = {
-    me, now, getNow, clock, plans, plansReady, activities, profile, reloadPlans, reloadProfile, reloadActivities,
+    me, now, getNow, clock, reloadClock, plans, plansReady, activities, profile, reloadPlans, reloadProfile, reloadActivities,
     matching, runMatch, banner, showBanner, hideBanner, toastMsg, toast, popping, pop, notifOn, setNotifOn, act,
   };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
