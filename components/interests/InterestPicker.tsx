@@ -3,7 +3,7 @@
 // Interest chips grouped by category, a custom interest form, and the min-size sheet.
 // Controlled: `value` in, onChange(value) out.
 import { useState } from "react";
-import { CATEGORIES, isPreset, MAX_INTERESTS } from "@/lib/catalog";
+import { CATEGORIES, displayCategory, isPreset, MAX_INTERESTS } from "@/lib/catalog";
 import { checkInterestName } from "@/lib/interest-text";
 import { useApp } from "../shell/AppProvider";
 import MinSizeSheet from "./MinSizeSheet";
@@ -22,6 +22,8 @@ export default function InterestPicker({ value, onChange, show = "all", onEmptyS
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ text: string; error: boolean } | null>(null);
   const [rethinking, setRethinking] = useState(false);
+  // Browse: one category at a time (tabs)
+  const [tab, setTab] = useState<string>(CATEGORIES[0]);
 
   async function rethink(name: string) {
     setRethinking(true);
@@ -62,6 +64,7 @@ export default function InterestPicker({ value, onChange, show = "all", onEmptyS
           : `Added with defaults (${a.category}, up to ${a.max_size} people). Claude can set these once it's connected.`,
         error: false,
       });
+      setTab(displayCategory(a.category)); // show the tab it landed in
       setOpen(a.name);
     } catch (err) {
       setMsg({ text: (err as Error).message, error: true });
@@ -70,6 +73,15 @@ export default function InterestPicker({ value, onChange, show = "all", onEmptyS
     }
   }
 
+  const chip = (a: (typeof activities)[number]) => {
+    const t = picked(a.name);
+    return (
+      <button key={a.name} className={`chip${t ? " on" : ""}${!t && full ? " off" : ""}`}
+        onClick={() => (!t && full ? toast(fullMsg) : setOpen(a.name))}>
+        {a.name}{t && <small>min {t.min}</small>}
+      </button>
+    );
+  };
   const labelOf = (name: string) => activities.find((a) => a.name === name)?.label ?? name;
   const empty = Math.max(0, MAX_INTERESTS - value.length);
 
@@ -91,29 +103,38 @@ export default function InterestPicker({ value, onChange, show = "all", onEmptyS
           ))}
         </div>
       )}
-      {show !== "slots" && CATEGORIES.map((cat) => {
-        const list = activities.filter((a) => a.category === cat && (show === "all" || (show === "picked") === !!picked(a.name)));
-        // Place has no presets, so on the full list it shows a hint until someone adds a spot
-        if (!list.length && !(cat === "Place" && show === "all")) return null;
+      {show === "all" && (
+        <>
+          <div className="cattabs" role="tablist" aria-label="Interest categories">
+            {CATEGORIES.map((cat) => (
+              <button key={cat} role="tab" aria-selected={tab === cat} className={tab === cat ? "on" : ""} onClick={() => setTab(cat)}>
+                {cat}
+                {value.some((v) => activities.find((a) => a.name === v.activity)?.category === cat) && <i aria-label="has a pick" />}
+              </button>
+            ))}
+          </div>
+          {(() => {
+            const list = activities.filter((a) => a.category === tab);
+            if (!list.length) {
+              return <p className="small muted">{tab === "Place"
+                ? "Places you like to hang out, like Washington Square Park or the High Line. Add one below."
+                : "Nothing here yet. Add one below."}</p>;
+            }
+            return <div className="chips" role="tabpanel">{list.map(chip)}</div>;
+          })()}
+        </>
+      )}
+      {(show === "picked" || show === "unpicked") && CATEGORIES.map((cat) => {
+        const list = activities.filter((a) => a.category === cat && (show === "picked") === !!picked(a.name));
+        if (!list.length) return null;
         return (
           <div className="catgroup" key={cat}>
             <div className="eyebrow">{cat}</div>
-            {!list.length && <p className="small muted">Places you like to hang out, like Washington Square Park or the High Line. Add one below.</p>}
-            <div className="chips">
-              {list.map((a) => {
-                const t = picked(a.name);
-                return (
-                  <button key={a.name} className={`chip${t ? " on" : ""}${!t && full ? " off" : ""}`}
-                    onClick={() => (!t && full ? toast(fullMsg) : setOpen(a.name))}>
-                    {a.name}{t && <small>min {t.min}</small>}
-                  </button>
-                );
-              })}
-            </div>
+            <div className="chips">{list.map(chip)}</div>
           </div>
         );
       })}
-      {show !== "picked" && show !== "slots" && <form className="stack" onSubmit={addCustom} autoComplete="off">
+      {show !== "picked" && show !== "slots" && <form className="stack addown" onSubmit={addCustom} autoComplete="off">
         <label className="eyebrow" htmlFor="customKw">Add your own</label>
         <p className="small muted" style={{ marginTop: -4 }}>An activity or a place. Claude sorts it into a category.</p>
         <div className="row" style={{ flexWrap: "nowrap" }}>
