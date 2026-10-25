@@ -1,6 +1,6 @@
 "use client";
 
-// Quiet status line under the notifications card: a slow "live" dot, what we're watching,
+// Quiet status line under the notifications card: a slow breathing dot, what we're watching,
 // and a small ring that fills toward the next matching run (top of every minute).
 // The seconds stay small and muted so the screen doesn't feel like a timer.
 import { useEffect, useState } from "react";
@@ -30,7 +30,7 @@ export default function NextCheck() {
       ) : (
         <>
           <span className="live-dot" aria-hidden="true" />
-          <span><b>Live</b><span className="muted"> · checking every minute</span></span>
+          <span className="muted">Checking every minute</span>
           <span className="next-in" aria-label={left === null ? undefined : `Next check in ${Math.ceil(left / 1000)} seconds`}>
             <span className="ring" style={{ "--p": `${Math.round(done * 360)}deg` } as React.CSSProperties} aria-hidden="true" />
             <span className="mono">{left === null ? "00:--" : mmss(left)}</span>
