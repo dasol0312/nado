@@ -41,10 +41,11 @@ export default function MatchesView() {
 
   return (
     <>
-      <div className="between"><h1>Right now</h1><span className={`pill mono ${clock?.base ? "amber" : "plain"}`} onClick={tapClock} style={{ userSelect: "none" }}
+      <div className="between"><h1>Right now</h1><button type="button" className={`pill mono ${clock?.base ? "amber" : "plain"}`} onClick={tapClock}
+          style={{ userSelect: "none", WebkitUserSelect: "none", cursor: "default" }}
           title={clock?.base ? "Demo clock (New York time)" : "New York time"}>
           {clock?.base ? `${DAY_SHORT[campusClock(now).day]} ${clockText(now)}` : clockText(now)}
-        </span></div>
+        </button></div>
       <p className="small muted" style={{ marginTop: -8 }}>Plans starting in the next 4 hours, built around when your classes end.</p>
       <div className="card between">
         <div>

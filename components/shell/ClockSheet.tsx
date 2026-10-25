@@ -2,7 +2,7 @@
 
 // Hidden demo clock (tap the clock on Right now 5 times). Sets the shared app_clock,
 // so every phone and the matcher move to the same date and time.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CLOCK_PRESETS } from "@/lib/demo";
 import { campusClock, DAY_SHORT, dayOfWeek, isDate, nextWeekday } from "@/lib/time";
 import { useApp } from "./AppProvider";
@@ -13,6 +13,21 @@ export default function ClockSheet({ onClose }: { onClose: () => void }) {
   const [date, setDate] = useState(start.date);
   const [time, setTime] = useState(start.time);
   const [busy, setBusy] = useState(false);
+  const wrap = useRef<HTMLDivElement>(null);
+
+  // Nothing scrolls while the sheet is open: lock the screen behind it and swallow drags
+  useEffect(() => {
+    const screen = document.querySelector<HTMLElement>(".screen");
+    const before = screen?.style.overflow ?? "";
+    if (screen) screen.style.overflow = "hidden";
+    const el = wrap.current;
+    const stop = (e: TouchEvent) => e.preventDefault();
+    el?.addEventListener("touchmove", stop, { passive: false });
+    return () => {
+      if (screen) screen.style.overflow = before;
+      el?.removeEventListener("touchmove", stop);
+    };
+  }, []);
 
   useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -38,7 +53,7 @@ export default function ClockSheet({ onClose }: { onClose: () => void }) {
   const today = campusClock(new Date()).date;
 
   return (
-    <div className="sheet-wrap" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div ref={wrap} className="sheet-wrap" style={{ touchAction: "none", overscrollBehavior: "contain" }} onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="sheet" role="dialog" aria-modal="true" aria-label="Demo clock">
         <div className="stack" style={{ gap: 4 }}>
           <span className="eyebrow">Secret demo clock</span>
