@@ -34,7 +34,11 @@ Realtime → 폰에 푸시 배너 → Nado!(joined) → Confirm(confirmed)
 
 ---
 
-## A. AI 기능 3개
+## A. AI 기능 3개 ✅ 연결됨 (lib/nado/features.ts)
+
+> 2026-10-25: 세 함수 모두 `lib/nado/features.ts`에 만들고 `lib/ai.ts`에 연결했어요. 키가 없으면 지금처럼 `null`(기본값)이에요.
+> 진짜 Claude로 시험: `npx tsx --env-file=.env.local lib/nado/try-features.ts [albert.png]`
+> 관심사 고민에는 차별 조건 빼기("boba, Koreans only" → "Boba")도 넣었어요.
 
 **연결 방법**: `lib/ai.ts`에 함수 3개가 자리만 있고 지금은 `null`을 돌려줘요(`null`이면 화면이 기본값으로 동작해요). `lib/nado/`에 함수를 만들고, `lib/ai.ts`의 해당 함수 안에서 불러서 결과를 그대로 돌려주면 끝이에요. 기존 `askJson`(lib/nado/claude.ts)을 그대로 쓰면 돼요.
 
