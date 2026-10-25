@@ -1,38 +1,66 @@
 <div align="center">
 
+<img src="public/mascot.webp" width="120" alt="nado mascot: a cartoon Statue of Liberty waving">
+
 # nado
 
-> Every way to meet people starts with someone speaking up first.
-> ### You don't have to be the first to speak up. nado does that for you.
-> Tell it what you'd love to do and when you're in class. <br>
-> When other students want the same thing in the **next four hours**, nado opens the plan and invites everyone.
->
-> ## No host. No profiles. No empty events.
-> You just say *"me too,"(nado)* and meet people you'd never have met.
+### Others ask, "Who's in?" You say: nado.
 
-**na·do** · */ˈnɑː.doʊ/* · **나도** means ***"me too"*** in Korean, and ***do*** means let's actually do it.
+**nado finds students at your school who want to do the same thing as you,<br>in your next free hour, and opens the plan for you.**<br>
+No host. No profiles. No empty events.
 
-Built at **Cal Hacks 13.0** by four Korean exchange students.
+**na·do** · */ˈnɑː.doʊ/* · **나도** means ***"me too"*** in Korean.
 
 ![Cal Hacks 13.0](https://img.shields.io/badge/Cal%20Hacks-13.0-57068C)
 ![Built with Claude](https://img.shields.io/badge/Built%20with-Claude-D97757)
-![Next.js](https://img.shields.io/badge/Next.js-black?logo=next.js)
-![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?logo=supabase&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
+![Supabase](https://img.shields.io/badge/Supabase-Postgres%20%2B%20Realtime-3FCF8E?logo=supabase&logoColor=white)
 
-**[▶ Demo video](#)** · **[Live app](#)** · **[Interactive prototype](https://claude.ai/artifact/VGToCEKiJ9WsL4UkSko2Ss)** · **[Devpost](#)**
+**[▶ Demo video](#)** · **[Live app](https://nado-pied.vercel.app)** · **[Interactive prototype](https://claude.ai/artifact/VGToCEKiJ9WsL4UkSko2Ss)** · **[Devpost](#)**
 
-<!-- Put a 10-second GIF here: Nado! tap → room → glowing screen → Found!
-<img src="docs/demo.gif" width="300" alt="nado demo"> -->
+<p>
+  <img src="docs/screens/04-matches.jpg" width="24%" alt="A plan arrives: board games at 10:00, meet at Kimmel Center">
+  <img src="docs/screens/06-room.jpg" width="24%" alt="The room: Claude picked Kimmel Center and explains why">
+  <img src="docs/screens/07-find.jpg" width="24%" alt="Finding each other with outfit hints">
+  <img src="docs/screens/08-found.jpg" width="24%" alt="Found! Claude asks the first question">
+</p>
 
 </div>
 
-> **For judges, in 30 seconds**
-> - **Problem:** you want to do something *now*, and nobody's free. → [Why nado](#why-nado)
-> - **Spontaneous:** plans for **today, up to 4 hours ahead**, starting when your class ends. → [Right now](#right-now-not-someday)
-> - **Not Meetup:** **nobody hosts, nobody browses**, and there are no empty events. → [Isn't this just Meetup?](#isnt-this-just-meetup)
-> - **Claude:** reads your schedule, understands any interest, screens out bias, hosts the meetup. → [How we use Claude](#how-we-use-claude)
-> - **Failure modes:** 8 ways Claude could fail a student, and our fix for each. → [Where Claude could go wrong](#where-claude-could-go-wrong)
-> - **Connecting people:** success isn't time in the app. It's **strangers who actually met**. → [Connecting people, offline](#connecting-people-offline)
+> ### For judges, in 30 seconds
+>
+> - **Problem:** you want to do something *now*, and nobody's free. Asking strangers feels awkward, so nobody asks. → [Why nado](#why-nado)
+> - **What it does:** you pick up to 3 interests and share your class schedule. Every minute, nado finds other students who want the same thing and are free in the **next four hours**, then invites everyone at once. → [How it works](#how-it-works)
+> - **Not Meetup:** nobody hosts, nobody browses, and a plan only exists once enough people already fit it. → [How it's different](#how-its-different)
+> - **Claude:** reads your Albert screenshot, understands any interest you type, picks a campus meeting spot, writes the invite, and asks the first question. **Code, not Claude, decides who meets whom.** → [How we use Claude](#how-we-use-claude)
+> - **Try it:** sign in with any `@nyu.edu` address. It's a demo, so any 6-digit code works. → [Try the demo](#try-the-demo)
+
+<details>
+<summary><b>Contents</b></summary>
+
+1. [Why nado](#why-nado)
+2. [How it's different](#how-its-different)
+3. [How it works](#how-it-works) (for students)
+4. [Under the hood](#under-the-hood) (matching, plan life cycle, rules)
+5. [How we use Claude](#how-we-use-claude)
+6. [Where Claude could go wrong](#where-claude-could-go-wrong)
+7. [Data model](#data-model) (what's in the database)
+8. [Try the demo](#try-the-demo) (what's real, what's simulated)
+9. [Run it locally](#run-it-locally)
+10. [Project structure](#project-structure)
+11. [Known limits](#known-limits)
+
+</details>
+
+### Words we use
+
+| Word | Meaning |
+|---|---|
+| **Plan** | An invitation nado opens for you: an activity, a time in the next four hours, and a meeting spot. |
+| **Nado!** | Your "me too." Tapping it puts the plan in your **Groups** tab. |
+| **Confirm** | The second tap, before the deadline. When everyone confirms (or enough people have by the deadline), the plan becomes a **room**. |
+| **Room** | The confirmed meetup: where to meet, who's coming (by nickname), quick replies, and the find-each-other game. |
+| **Sample students** | 800 generated NYU students, so there's someone to match with during the demo. See [what's simulated](#try-the-demo). |
 
 ---
 
@@ -42,241 +70,335 @@ We're four Korean exchange students, and we kept living the same moment:
 
 > **"I want to do something right now, but there's no one to do it with."**
 
-It's not that we had no friends. It's that:
-
 - 🏀 One of us had a free hour and badly wanted to play basketball. Nobody was free.
 - 🎭 One of us went to a musical **alone**, because none of us cared about musicals.
 - 🇰🇷 Slowly, we only hung out with other Koreans, because it was easy.
 
 So why not just ask strangers? In practice, nobody does:
 
-- **The silence.** You post *"anyone up for basketball?"* in the group chat. Nobody replies. Now it's embarrassing.
-- **The profile trap.** With strangers, you look at the profile first: face, looks, nationality. You judge, often without noticing. That's how the Korean bubble forms.
+- **Nowhere to ask.** Thousands of students are around you, but there's no place to ask the ones who'd say yes.
+- **The profile trap.** With strangers, you look at the profile first: face, looks, nationality. That's how bubbles form.
 - **The host burden.** Whoever speaks first becomes the organizer: the place, the waiting, the small talk.
 
-> **The insight:** it's not that nobody wants to join. The people who would say *"me too"* never see the question.
-> **Few people ask, but far more would say yes if someone did.**
+> **The insight:** few people ask, but far more would say *"me too"* if someone did. They just never see the question.
 
-Back home, this moment has a one-word answer. A friend says *"I'm craving boba,"* and you say:
+Back home, this moment has a one-word answer. A friend says *"I'm craving boba,"* and you say **"나도!"** (*nado*): "me too!" No planning, no hosting, no asking first. Abroad, there was nobody around to say it. So we built the thing that asks for you, and lets you just say *nado*.
 
-<div align="center">
+### Right now, not someday
 
-### **나도!** *(nado)* — "Me too!"
+> *"Getting kind of hungry... anyone up for pizza?"*
 
-</div>
+That thought lasts about ten minutes. So spontaneity is the core of nado, not a feature:
 
-No planning, no hosting, no asking first. When friends text, it softens into **나두** (*nadu*): *"나두나두!"* And read as **나 + do**, it's *"I'll do it."*
+- **The next four hours only.** No calendars, no "next Saturday?"
+- **Built around the end of class.** A plan can start the minute your class lets out: *"Right after MATH-UA 121."*
+- **Always fresh.** Matching runs every minute, on the minute.
+- **One hour, two taps.** *Nado!*, then *Confirm*. You're giving up your next free hour, not your weekend. That makes "me too" easy, even to strangers.
 
-Abroad, there was nobody around to say *nado*. So we built the thing that says it for you. This isn't only for exchange students: it's for anyone with a free hour and no one to share it with, and anyone who wants to get to know people **outside their friend circle**, without a profile in the way.
+## How it's different
 
-## Right Now, Not Someday
+| | ✨ **nado** | Meetup · Pie | Timeleft · 222 | Fizz · Sidechat |
+|---|---|---|---|---|
+| **What it is** | **Plans for your next free hour** | Event listings | Dinners and outings with matched strangers | Anonymous campus feeds |
+| **Starts from** | **What you want to do** | An event someone hosts | A personality quiz | Posts |
+| **Who sets it up?** | **No one.** nado opens the plan; you can't even create one. | An organizer (Pie also pays local hosts) | The service picks the group and the venue | Whoever posts |
+| **Do you browse?** | **No.** A plan that fits your next free hour, or nothing. | Yes, a list of events | No. You book a date (Timeleft) or wait for an invite (222) | Yes, a feed |
+| **When** | **Within the next 4 hours** | Scheduled ahead | Set dates the service runs | Anytime (online) |
+| **Where** | **Your campus, minutes from class** | Around the city (Meetup also online) | Restaurants and venues in the city | Online |
+| **Too few people?** | **Never opens.** A plan exists only once enough people fit it. | Up to the organizer | The event can be cancelled | Not an events app |
 
-Most apps help you plan. nado is for the moment you didn't plan.
+<sub>Based on each service's public descriptions, October 2026.</sub>
 
-> *"Ugh, getting kind of hungry... anyone up for pizza?"*
+**Others start with a host, a quiz, or a post. We start with what you want to do and when you're free.** You choose *boba* and meet the people behind the nicknames when you get there.
 
-That thought lasts about ten minutes. If finding people takes a day of back-and-forth, it's gone. So **spontaneity is the core of nado**, not a feature:
+## How it works
 
-- **Today only, up to four hours ahead.** No calendars, no "next Saturday?" Every plan starts within the next four hours, some just minutes away.
-- **Built around the end of class.** *"Right after MATH-UA 121"*: plans start when your class lets out, because that's when the free hour actually begins.
-- **Always fresh.** nado re-checks every minute and whenever a class ends, so a plan can show up while you're walking out of the lecture hall.
-- **One hour, one tap.** You're not giving up your weekend, just your next free hour. That's what makes saying *"나도!"* easy, even to strangers.
+<p align="center">
+  <img src="docs/screens/01-sign-in.jpg" width="24%" alt="Sign in: enter the 6-digit code">
+  <img src="docs/screens/02-schedule.jpg" width="24%" alt="Claude filled in the class schedule from an Albert screenshot">
+  <img src="docs/screens/03-interests.jpg" width="24%" alt="Picking interests by category">
+  <img src="docs/screens/05-groups.jpg" width="24%" alt="Groups: confirmed, waiting for the others">
+</p>
 
-A plan made weeks ahead needs commitment. A plan for *right now* only needs a yes.
+```mermaid
+flowchart TB
+    subgraph before ["Before you meet"]
+        direction LR
+        A["Sign in"] --> B["Profile<br/>interests + schedule"] --> C["Matches<br/>a plan arrives"] -- "Nado!" --> D["Groups<br/>everyone confirms"]
+    end
+    subgraph meet ["Meeting up"]
+        direction LR
+        E["Room<br/>where to meet"] --> F["Find each other"] --> G["Found!<br/>first question"]
+    end
+    before -- "everyone confirmed" --> meet
+```
 
-## Why Existing Apps Don't Fix It
+1. **Sign in** with your school email. (The idea works at any school; this build is set up for NYU: Albert schedules, NYU buildings, the Washington Square map.) You become a random nickname like **Coral Owl**. No photo, no bio.
+2. **Set up once** on the Profile tab:
+   - **Up to 3 interests.** Pick from categories (Sports, Cafe, Food, Culture, Games, Place, Other) or type your own, like *badminton* or *Washington Square Park*. For each, set the **smallest group you'd enjoy**.
+   - **Your schedule.** Upload a screenshot of your Albert schedule and **Claude fills in your classes**. Paint anything else as *Fixed* (job, club) or *Never free*. Everything else, 9 AM to 9 PM, counts as free.
+3. **Get a plan.** On Matches, a countdown shows the next check. When a plan fits, a banner arrives: ***Board games at 9:00, meet at Kimmel Center?*** Tap **Nado!**
+4. **Confirm** in Groups before the deadline (10 minutes before it starts). When everyone confirms (or enough people have by the deadline), you drop into the **room**, and that hour is blocked on your schedule.
+5. **Meet.** First at a public NYU building (Claude is told to pick one), then a short walk to the venue, with **Claude's one-line reason** for the spot.
+6. **Find each other.** Tap **Share your outfit**. Hints about each member unlock one at a time. Still lost? **"I give up"** makes your screen glow.
+7. **Found!** Claude asks the first question, about the activity you share. Then **Back to home**.
 
-| | Timeleft · Pie · 222 | Fizz · Sidechat | **nado** |
-|---|---|---|---|
-| **Starts from** | Who you are (personality quiz) | What people post | **What you want to do** |
-| **When** | A date the service picks | Whenever someone posts | **The next 4 hours** |
-| **Where** | Venues around the city | Online | **Your campus, minutes from class** |
-| **Who's in?** | Matched to your personality | Usernames | **Nicknames, until you meet** |
+If someone taps **"I can't make it"** and the group falls below its minimum, the room dissolves and everyone else goes back into matching. The person who left isn't invited to that hour again.
 
-**They start with people. We start with the activity.** You choose *boba at 3:15* and find out who's coming when you get there. Nobody is judged by a profile, and nobody is rejected, because a plan only exists once enough people already fit it.
+## Under the hood
 
-**And none of them is built around one campus.** "See you after class" only works if the app knows your class ends at 3:15, that Kimmel is a three-minute walk, and that you have exactly one free hour. nado is built around NYU's schedule and buildings.
+### Every minute: one matching run
 
-### Isn't this just Meetup?
+A database timer (Supabase **pg_cron**) calls `GET /api/match` at :00 every minute. Open phones also call it on the minute, but `claim_match_minute()` lets only the first call in each minute through, so nobody is matched twice.
 
-Both end with people doing something together. Everything before that is the opposite.
+```mermaid
+sequenceDiagram
+    autonumber
+    participant T as pg_cron / open phones
+    participant API as /api/match (Vercel)
+    participant DB as Supabase Postgres
+    participant C as Claude
+    participant P as Phones (Realtime)
 
-| | Meetup | nado |
-|---|---|---|
-| **Someone has to host** | Yes. An organizer creates the event, picks the place, and waits for RSVPs. | **No one.** nado opens the plan. You can't even create one. |
-| **You browse** | A list of events, and decide from the title, host, and who's going. | **Nothing to browse.** You get a plan that fits your next free hour, or nothing. |
-| **Empty events** | Common. An event can sit with zero RSVPs, and the host feels it. | **Impossible.** A plan exists only once enough people already fit it. |
-| **When** | Days or weeks ahead, on a calendar. | **The next four hours**, built around when your class ends. |
-| **Who you see first** | The host's profile and the attendee list. | **Nicknames**, until you're standing in the same lobby. |
+    T->>API: run matching
+    API->>DB: claim_match_minute() (first call this minute only)
+    API->>DB: settle plans past their deadline, delete plans older than 30 days
+    API->>DB: build_activity_slots(now): free time in the next 4h × interests
+    API->>DB: read slots, interests, today's plans
+    opt an activity has no meeting spot yet
+        API->>C: pick a campus meeting spot + venue (saved, reused next time)
+    end
+    API->>API: lib/nado/matching.ts groups people (plain code, no AI)
+    API->>C: write invitation, place reason, first icebreaker
+    API->>DB: re-check nobody got booked meanwhile, then save plans + invites
+    DB-->>P: new invite arrives (in-app banner + Matches)
+```
 
-**Meetup helps people who are ready to ask. nado is for everyone else**: the student who would have said *"me too"* but was never going to post *"anyone up for basketball?"*
+### Matching rules
 
-## How It Works
+These are all in code ([`lib/nado/matching.ts`](lib/nado/matching.ts), [`lib/server/match.ts`](lib/server/match.ts)), so the same input always gives the same groups. The numbers are today's values (subject to change); each one is a single constant in code.
+
+| Rule | Value |
+|---|---|
+| Hours | Plans run between 9 AM and 9 PM, New York time, so the last one starts at 8 PM |
+| How far ahead | Plans start within the next **4 hours**, at least **20 minutes** from now |
+| Start time | The moment someone's free time begins (like a class ending), or on the hour / half hour |
+| Length | **60 to 120 minutes**, ending before anyone's next busy block |
+| Group size | Respects **each person's own minimum** and the activity's maximum |
+| Which plan first | Bigger groups first, then earlier times |
+| Limits per student | Up to **3 interests**, up to **3 open invitations**, one plan per activity per day, never two plans at the same time |
+| Confirm deadline | **10 minutes** before the start |
+| After "I can't make it" | That hour stays off-limits for you today |
+| Old plans | Shown under **Past month** in Groups, deleted after **30 days** |
+
+### Plan life cycle
 
 ```mermaid
 flowchart LR
-    A["Sign in<br/>@nyu.edu"] --> B["Profile<br/>interests + schedule"]
-    B --> C["Matches<br/>next 4 hours"]
-    C -- "Nado!" --> D["Groups<br/>everyone confirms"]
-    D -- "all confirmed" --> E["Room<br/>where to meet"]
-    E -- "30 min before" --> F["Find each other"]
-    F -- "met up" --> G["Found!<br/>icebreaker"]
-    D -. "below minimum" .-> C
+    O(["Open<br/>everyone invited"])
+    C(["Confirmed<br/>the room is open"])
+    X(["Dissolved"])
+    D(["Done<br/>kept 30 days"])
+    M[["Back into matching"]]
+    O -- "everyone confirms,<br/>or the deadline passes<br/>with enough people" --> C
+    O -- "can't reach<br/>the minimum" --> X
+    C -- "a cancel drops it<br/>below the minimum" --> X
+    C -- "the hour ends" --> D
+    X --> M
 ```
 
-1. **Sign in** with an NYU email. You become a random nickname like **Coral Owl**. No photo, no bio.
-2. **Set up once.** Pick interests and the smallest group you'd enjoy for each. Upload a screenshot of your Albert schedule and **Claude reads your classes**. Paint anything else as *Fixed* or *Never free*.
-3. **Get matched.** Every minute, on the minute, nado checks the next four hours: ***Boba · 3:15–4:15 PM · Right after MATH-UA 121 · 4 matched · meet at Kimmel.*** A push arrives. Tap **Nado!**
-4. **Confirm.** When everyone confirms, you drop straight into the room and the hour goes on your schedule, so you're never double-booked.
-5. **Meet.** Always at a public NYU lobby first, then a short walk to the venue, with **Claude's one-line reason** for the plan.
-6. **Find each other.** You describe your outfit; hints about your group unlock one at a time. Still lost? Tap **"I give up"** and your screen **glows** *"I'm here!"*
-7. **Found!** **Claude asks the first question**, about the activity you share, so nobody has to break the silence.
+Each member moves through **invited → joined** (tapped *Nado!*) **→ confirmed**, or ends as **cancelled** ("I can't make it") or **declined** (no answer by the deadline). The rule is a small pure function, [`settle()` in `lib/match/rules.ts`](lib/match/rules.ts), with tests.
 
-If someone drops out and the group falls below its minimum, the room dissolves and that hour is matched again.
-
-## How We Use Claude
+## How we use Claude
 
 **Our rule: Claude does what only a language model can do. Code does what has to be exact.**
 
 ```mermaid
 flowchart LR
-    U["Claude understands<br/>screenshot · free-text interests · bias"] --> M["Code decides<br/>who, when, which group"] --> H["Claude hosts<br/>plan reason · icebreaker"]
+    U["Claude understands<br/>your schedule screenshot<br/>and the interests you type"] --> M["Code decides<br/>who, when, which group"] --> H["Claude hosts<br/>the meeting spot, the invite,<br/>and the first question"]
 ```
 
-| | Where | What Claude does | Without Claude |
-|---|---|---|---|
-| **1** | **Reads your schedule** (vision) | Albert screenshot → classes (course, day, start, end) | Typing every class by hand. Most people quit at setup. |
-| **2** | **Understands any interest** | *"Badminton"* → category, **realistic group size for strangers**, venue, and why | A fixed dropdown. Anything else can't be matched. |
-| **3** | **Cleans and screens** | *"bubble tea"* → *"boba"* · *"boba, Koreans only"* → *"boba"* · dating requests skipped | Same wish, split apart. Bias gets in. |
-| **4** | **Explains the plan** | *"Kimmel is easy to find between classes; Surreal Creamery is 4 min away."* | A map pin with no reason to trust it. |
-| **5** | **Breaks the ice** | One light question about the shared activity | Someone has to speak first. |
+| # | When | What Claude does | Model | Limits and checks | If Claude fails |
+|---|---|---|---|---|---|
+| 1 | You upload an Albert screenshot | Reads every class meeting: course, day, start, end | Sonnet (vision) | Strict type and time checks, max 60 classes | You paint the hours yourself |
+| 2 | You type your own interest | Category, the **largest group of strangers** it works for, a default minimum, and why. Drops "who can join" conditions (*"boba, Koreans only"* → **Boba**) | Sonnet | Size clamped to 2–12; reason ≤ 140 chars | Saved as *Other*, up to 4 people |
+| 3 | An activity gets its first plan | Picks a **public NYU building** to meet and a real venue nearby, and says when it isn't sure the venue exists | Sonnet | Saved and reused for that activity; off-campus venues are labeled *"Suggested by Claude · check it's open before you go"* | A default campus spot, and Claude is asked again next time |
+| 4 | Every new plan | Writes the invitation, the reason for the spot, and the first icebreaker | Sonnet | ≤ 60 / 160 / 90 characters | Plain templates |
+| 5 | You tap *Another question* | A new icebreaker about the shared activity | Haiku | Confirmed members only; ≤ 90 chars | A built-in question list |
 
-**What Claude does not do**
+- **We never send who you are.** No names, emails, or IDs: only activities, times, and places. A schedule screenshot can show your name, so Claude is told to return only courses, days, and times, and that's all we keep.
+- **Every prompt is in one file:** [`lib/nado/prompts.ts`](lib/nado/prompts.ts). The calls are in [`lib/nado/features.ts`](lib/nado/features.ts) (1, 2, 5) and [`lib/nado/plan.ts`](lib/nado/plan.ts) (3, 4).
+- **Cost stays small.** A matching run calls Claude only when a real student has a plan to open: at most one call for new places and one call per 15 new plans for the text.
+- **Before Claude sees a typed interest,** our own filter ([`lib/interest-text.ts`](lib/interest-text.ts)) rejects non-English text, offensive words, links, and keyboard mashing, with a friendly message.
 
-- **Decide who meets whom.** That's plain, tested code in [`lib/nado/matching.ts`](lib/nado/matching.ts). Same input, same groups, so we can always explain *why this group*.
-- **See who you are.** Claude sees activities, times, and places. Never names, emails, or IDs. (From a schedule screenshot, we keep only course codes and times.)
-- **Block anything.** Every call has a fallback. A failed call never stops a plan.
-
-**See it in the code.** Every prompt lives in [`lib/nado/prompts.ts`](lib/nado/prompts.ts). Here's how we tell Claude to handle bias, word for word:
+How we tell Claude to handle bias, word for word (from `interestSystem` in `prompts.ts`):
 
 ```text
-If the name includes a condition about who can join based on nationality, race, ethnicity,
-religion, gender, age, sexuality, or looks (for example "boba, Koreans only" or "basketball,
-guys only"), remove the condition, keep the activity, and put the removed text in
-"removed_condition". Skill level ("beginners welcome") and language practice
-("Korean conversation practice") are fine and are not conditions to remove.
+If the text includes a condition about who can join based on nationality, race, ethnicity, religion,
+gender, age, sexuality or looks ("boba, Koreans only"), leave the condition out of the label.
+Skill level ("beginners") and language practice are fine to keep.
 ```
 
-And the tests check it: [`lib/nado/matching.test.ts`](lib/nado/matching.test.ts) covers *"boba, Koreans only" → boba*, *"date night" → skipped*, eight people wanting boba at once, and one student wanting two things at the same hour.
-
-## Where Claude Could Go Wrong
-
-Using AI thoughtfully means knowing how it fails the person on the other end.
+## Where Claude could go wrong
 
 | Where it can fail | What happens to the student | What we built |
 |---|---|---|
-| **Misreads your schedule** | Matched during a class | You see and fix what it read. Strict format checks. |
-| **Bad group size** for a new interest | 10-person "coffee" | Clamped to 2–12. **You set your own minimum.** |
-| **Closed or wrong venue** | Walk to a dead end | Marked *"check it's open."* **You always meet at an NYU lobby first.** |
-| **Lets bias through** | Rebuilds the bubble | **No nationality, race, or gender field exists.** Conditions are stripped, and you're told. |
-| **Used for dating** or unsafe plans | Others feel targeted | Screened out. NYU-only sign-in and public places back it up. |
-| **Makes up plan details** | Wrong place or time | Code builds the plan from verified places. Claude only explains it. |
-| **Awkward icebreaker** | Uncomfortable first minute | Activity-only questions. One tap for another. |
-| **Slow or down** | No plan appears | A non-AI fallback for every call. |
+| **Misreads your schedule** | Matched during a class | You see the result on the grid and fix it. Malformed answers are dropped. |
+| **Bad group size** for a new interest | A 10-person "coffee" | Clamped to 2–12, and **you set your own minimum**. |
+| **Closed or wrong venue** | Walk to a dead end | Off-campus venues say *"check it's open before you go."* **You meet at an NYU building first.** |
+| **Lets bias through** | Rebuilds the bubble | **No nationality, race, or gender field exists.** Conditions are dropped from typed interests. |
+| **Makes up plan details** | Wrong time or group | Code decides who and when. Claude picks the place and writes the words, and off-campus places are labeled. |
+| **Too much text** | Cards fill the screen | Character limits in the prompt, then trimmed at a word. |
+| **Wrong JSON shape, slow, or down** | No plan appears | Answers are shape-checked, and every call has a non-AI fallback. |
 
-**Safety beyond AI:** NYU email only · nicknames, no photos · public meeting places · nothing happens until you tap *Nado!* and confirm · no free-text chat to moderate · the API key never reaches the browser.
+## Data model
 
-## Connecting People, Offline
-
-**nado gets you to know people outside your friend circle.** Your friends are great, but they're the same few people, with the same schedules and the same interests. nado connects you with the ones you'd never have met: different countries, different majors, different friend groups, the same love of boba at 3:15. Most social apps measure time spent in the app. nado measures **people who actually met**.
-
-- **It ends offline.** No feed, no swiping, no chat. A few seconds in the app, an hour with people.
-- **No profiles until you meet.** People meet you, not a photo.
-- **The awkward first minute is designed.** Finding each other is a small game, your screen glows when you're lost, and Claude asks the first question.
-- **No one gets rejected.** A plan appears only when enough people already fit it.
-- **It breaks bubbles by default.** You don't pick who's in, so you meet whoever loves boba at 3:15. For four Korean students, that was the point.
-
-## Architecture
+The database is Supabase Postgres. The schema is [`supabase/schema.sql`](supabase/schema.sql), and the DB functions are in [`supabase/migrations/`](supabase/migrations).
 
 ```mermaid
-flowchart TB
-    P["Students' phones<br/>(installable web app)"] <--> API["Next.js API routes<br/>(Vercel)"]
-    API --> C1["Claude: schedule reading,<br/>interest understanding"]
-    JOB["Matching run<br/>every minute, on the minute"] --> M["lib/nado/matching.ts<br/>(plain code)"]
-    M --> C2["Claude: plan reason,<br/>icebreaker"]
-    API <--> DB[("Supabase<br/>Postgres + Realtime")]
-    JOB <--> DB
-    DB -- "real-time invites, confirmations, room updates" --> P
+erDiagram
+    students ||--o{ busy_blocks : "has"
+    students ||--o{ interests : "picks (max 3)"
+    activities ||--o{ interests : "of"
+    places ||--o{ activities : "meeting spot / venue"
+    students ||--o{ activity_slots : "free time x interest"
+    rooms ||--o{ room_members : "invites"
+    students ||--o{ room_members : "is"
+    rooms ||--o{ messages : "quick replies"
+    places ||--o{ rooms : "meet at"
 ```
 
-| Layer | Technology |
+| Table | What's in it | Rows on Oct 25 |
+|---|---|---|
+| `students` | Nickname, NYU email (null for samples), `is_sample` | 805 (800 sample + 5 real) |
+| `busy_blocks` | Weekly busy hours: `class` (Albert), `fixed`, `never` | ~10,400 |
+| `interests` | Student × activity, with that student's minimum group size | ~2,100 |
+| `activities` | 16 presets, 3 sample *Place* interests, and ones students added. Category, max size, and Claude's reason | 21 |
+| `places` | Meeting spots and venues Claude picked (campus or not, address, nearest streets) | 14 |
+| `activity_slots` | **Rebuilt every minute:** each student's free time in the next 4 hours × their interests | ~2,000 |
+| `rooms` | Plans: activity, start/end, confirm deadline, status, place, Claude's invitation, reason, icebreaker | changes live |
+| `room_members` | Who's invited, and their status and outfit hints | changes live |
+| `messages` | Quick replies in a room ("I'm here", "5 min late") | changes live |
+| `app_clock` | The shared demo clock (one row; empty = real time) | 1 |
+| `match_runs` | Which minutes already ran matching | rolling, 1 day |
+
+**DB functions:** `app_now()` (now, following the demo clock) · `build_activity_slots()` (free time is computed in the database, because the API returns at most 1,000 rows and `busy_blocks` has ~10k) · `claim_match_minute()` (once per minute) · `start_match_timer()` / `stop_match_timer()` (pg_cron, SQL Editor only).
+
+## Try the demo
+
+**The campus is simulated. You are real.**
+
+A matching app is only as good as the people on it, so we generated a campus: **800 virtual NYU students** ([`scripts/generate-students.ts`](scripts/generate-students.ts)). Each has a realistic class schedule (75-minute MW/TR blocks, recitations, evening labs), jobs and clubs, 2–3 interests tilted by major, and their own minimum group size. So every hour of the week looks different, and the same command always generates the same campus.
+
+1. Scan the QR code (or open **[nado-pied.vercel.app](https://nado-pied.vercel.app)**) on your phone and sign in with any `@nyu.edu` address. Any 6-digit code works. You join the 800 sample students as a real one.
+2. Pick up to 3 interests and upload a schedule screenshot (or paint your hours).
+3. Within a minute, if enough students are free and like the same thing, a plan appears. Tap **Nado!**, then confirm.
+4. Sample students confirm on their own, the room opens, and you can play the find game through to **Found!**
+
+To keep the sample students from using each other up, the demo only opens a plan when it includes at least one real student, and those plans go first.
+
+| Real | Simulated |
 |---|---|
-| Frontend and API | [Next.js](https://nextjs.org) (installable web app, no app store) |
-| Database and real-time | [Supabase](https://supabase.com) (Postgres + Realtime) |
-| AI | [Claude API](https://docs.claude.com) (vision, reasoning, short text) |
-| Hosting | [Vercel](https://vercel.com) |
-| Built with | [Claude Code](https://docs.claude.com/en/docs/claude-code) |
+| You, on your own phone | The other 800 students (generated, `is_sample = true` in the database) |
+| Claude: reading the schedule, understanding interests, picking the spot, writing the invite and icebreakers | Sample students confirming, and their outfits in the find game |
+| The matching code over all 800+ students, every minute | Login codes: no email is sent, any 6 digits work |
+| Real-time updates between phones | **Hidden demo clock:** tap the clock on *Right now* 5 times to jump to any date and time (shared by every phone), so "right after class" works at any hour |
 
-```
-app/          Next.js pages and API routes
-components/   Screens
-lib/nado/     matching.ts (no AI) · prompts.ts · claude.ts (calls + fallbacks) · matching.test.ts
-supabase/     Schema, seed data, migrations
-```
-
-## Run It Locally
+## Run it locally
 
 ```bash
 git clone https://github.com/dasol0312/nado.git
 cd nado
 npm install
-cp .env.example .env.local   # fill in the keys below; never commit this file
-npm run dev
+cp .env.example .env.local   # fill in the values below; never commit this file
+npm run dev                  # http://localhost:3000
 ```
 
+| Variable | Needed? | What it's for |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Your Supabase project |
+| `ANTHROPIC_API_KEY` | Yes | Claude (server only; never sent to the browser) |
+| `ANTHROPIC_WORKSPACE_ID` | Only if your key isn't tied to a workspace | |
+| `NADO_SESSION_SECRET` | Yes in production | Signs the login cookie (any long random string) |
+| `CRON_SECRET` | Recommended | The every-minute timer sends it to `GET /api/match` |
+| `NADO_EMAIL_OTP` | No | `1` emails real 6-digit codes through Supabase Auth |
+| `NADO_DEMO` | No | `0` turns off the demo routes (hidden clock, sample confirmations) |
+
+**Database** (on a new, empty Supabase project), in this order in the SQL Editor:
+
+1. `supabase/schema.sql` (⚠️ drops and recreates every table, so never run it on the team project)
+2. `supabase/migrations/`: `20261024_activity_slots_week_start.sql`, `20261025_match_helpers.sql`, `20261025_match_timer.sql`, `20261025_match_every_minute.sql`, `20261025_place_category.sql`, `20261025_remove_demo_reset.sql`
+3. `npm run seed:students` (16 preset activities and 800 sample students)
+4. After deploying: `select start_match_timer('https://<your-app>/api/match', '<CRON_SECRET>');`
+
+**Checks** (no API key or database needed):
+
+```bash
+npm run typecheck && npm run lint
+npx tsx lib/nado/matching.test.ts   # grouping, deterministic results, class-end starts, sizes
+npx tsx lib/match/rules.test.ts     # plan life cycle, leaving an hour
+npx tsx lib/plan-lists.test.ts      # what shows in Matches and Groups
+npx tsx lib/validate.test.ts        # bad input and malformed Claude answers
 ```
-NEXT_PUBLIC_SUPABASE_URL=...
-NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-ANTHROPIC_API_KEY=...
-ANTHROPIC_WORKSPACE_ID=...   # only if your key isn't tied to a workspace
+
+## Project structure
+
+```
+app/
+  (tabs)/             Profile · Matches · Groups (share the bottom tab bar)
+  login/              NYU email + 6-digit code
+  rooms/[roomId]/     The room, and /find (outfit hints, glow, Found!)
+  api/
+    match/            The matching run (timer + phones)
+    activities/       Add your own interest (Claude #2)
+    schedule/read/    Albert screenshot (Claude #1)
+    profile/          Save interests and busy hours
+    rooms/[roomId]/   join (Nado!) · confirm · cancel · reply · outfit · icebreaker (Claude #5)
+    auth/             start · verify · signout
+    demo/             Hidden clock, sample students confirming
+components/           One folder per screen (shell, auth, schedule, interests, matches, groups, room, find)
+lib/
+  nado/               Matching (no AI) · prompts · every Claude call and its fallback (#1–#5)
+  server/             Matching run, plan life cycle, sessions, API helpers
+  match/rules.ts      settle(): open or dissolve a plan
+  time.ts             New York campus time, on any device
+supabase/             schema.sql, migrations (DB functions, timer)
+scripts/              800 sample students
+docs/                 DEVELOPMENT.md (API details), screenshots
 ```
 
-- **Database:** with your own empty Supabase project, run `supabase/schema.sql`, the two files in `supabase/migrations/`, then `npm run seed:students`. (On the team project, don't run schema.sql: it resets existing data.)
-- **Tests:** `npx tsx lib/nado/matching.test.ts` (no API key needed)
+API details, request bodies, and error codes: [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md).
 
-## Demo: What's Real and What's Simulated
+## Building it
 
-**The campus is simulated. The judge is real.**
+- **"Isn't this just Meetup?"** Our first version showed a list of rooms, and mentors said it looked like Meetup or 222. The difference was real but invisible, so we removed browsing entirely: you get a plan for your next free hour, or nothing.
+- **LLMs are bad at clocks.** We first asked Claude to compute overlapping free time. It was *mostly* right, which isn't good enough when "mostly" sends someone to boba during their lecture. All time math moved into code; Claude kept the language.
+- **A matching app with no users matches nobody.** So we generated a campus. Then the sample students matched each other first and left no one for the real judge, so now a plan only opens when it includes a real student.
+- **Our first hackathon, and a new stack.** None of us had shipped with Supabase or Vercel before.
 
-A matching app is only as good as the people on it, so we built a campus: **800 virtual NYU students**, each with their own weekly class schedule (realistic Mon/Wed and Tue/Thu blocks, lunch rushes, evening labs), fixed commitments, interests, and the smallest group they'd enjoy for each. Nobody shares a schedule, so every hour of the week looks different.
+## Known limits
 
-When a judge signs in on their own phone, they join that campus as **student #801**:
+We'd rather say these plainly:
 
-1. They scan a QR code, sign in, pick *boba*, and upload a schedule.
-2. nado runs matching across all 801 students and finds a plan *right after one of their classes*, with real sample students who are free and want boba too.
-3. They tap **Nado!**, confirm, play the find game, give up, and their screen glows. **Found!** Claude asks the first question.
+- **Demo login.** Any 6-digit code works. Real email codes are built (`NADO_EMAIL_OTP=1`) but need an email provider set up in Supabase.
+- **Open database rules.** Row-level security is open for the hackathon. Before real students join, the server needs its own key and the browser should only read its own rows.
+- **No real push notifications yet.** The banner appears while the app is open.
+- **One campus.** Places, streets, and the map are built around Washington Square.
 
-| Real | Simulated (and labeled in the UI) |
-|---|---|
-| The judge, on their own phone | The other 800 students: generated schedules, interests, and group sizes, marked as sample data |
-| Claude reading the schedule, understanding interests, screening, writing the plan and icebreaker | Sample students' confirmations and outfits in the find game |
-| The matching code, running over all 801 students | A presenter-only demo clock, so "right after class" works at any hour |
-| Real-time updates between phones | Matching on a button press instead of every minute |
-
-**Next:** real push notifications · Claude with live web search for venues open right now · private post-meetup feedback and blocking · more campuses, one at a time.
+**Next:** reporting after each meetup, limited to no-shows, harassment, and inappropriate behavior (so it protects people without becoming a rating system) · real push notifications · locked-down database access · more campuses, one at a time.
 
 ## Team
 
 Four Korean exchange students who kept wishing someone nearby would say *"나도!"*
 
-| Name | Role |
-|---|---|
-| _name_ | _role_ |
-| _name_ | _role_ |
-| _name_ | _role_ |
-| _name_ | _role_ |
+| Name | Role | What they built |
+|---|---|---|
+| Kyeongseo Jang | _role_ | _what they built_ |
+| Yeyoung Kwon | _role_ | _what they built_ |
+| Dasol Yun | _role_ | _what they built_ |
+| Yerin Eun | _role_ | _what they built_ |
 
-Built at **Cal Hacks 13.0**, San Francisco · Powered by the **Claude API** and developed with **Claude Code** · Planning guided by [calhacks-kit](https://github.com/georgeykalangi/calhacks-kit)
+Built at **Cal Hacks 13.0**, San Francisco · Powered by the **Claude API** and developed with **Claude Code**
 
 ---
 
