@@ -65,20 +65,17 @@ export default function ProfileView() {
         <button className="btn ghost sm" onClick={signOut}>Sign out</button>
       </div>
 
-      <div className="section-h"><h2>My interests</h2><span className="small muted">{interests?.length ?? 0} picked</span></div>
+      <div className="section-h"><h2>My current interests</h2><span className="small muted">{interests?.length ?? 0} picked</span></div>
       <div className="card stack" style={{ gap: 10 }}>
         {interests?.length
           ? <><InterestPicker value={interests} onChange={changeInterests} show="picked" /><p className="small muted">Tap one to change its minimum group size or remove it.</p></>
-          : <p className="small muted">No interests yet. Add some below.</p>}
+          : <p className="small muted">No interests yet. Pick some below.</p>}
       </div>
-      {interests && (
-        <details className="card" style={{ padding: "12px 14px" }} open={!interests.length}>
-          <summary style={{ cursor: "pointer", fontWeight: 600 }}>Add interests</summary>
-          <div className="stack" style={{ gap: 12, marginTop: 12 }}>
-            <InterestPicker value={interests} onChange={changeInterests} show="unpicked" />
-          </div>
-        </details>
-      )}
+
+      <div className="section-h"><h2>My interests</h2><span className="small muted">Tap to add</span></div>
+      {interests
+        ? <div className="card stack" style={{ gap: 12 }}><InterestPicker value={interests} onChange={changeInterests} /></div>
+        : <div className="empty"><span className="spinner" /></div>}
 
       <div className="section-h"><h2>My availability</h2><span className="small muted">Changes re-run matching</span></div>
       <p className="small muted" style={{ marginTop: -10 }}>Classes come from Albert. Paint other commitments and hours you’re never free; everything else counts as free.</p>

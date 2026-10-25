@@ -3,7 +3,7 @@
 // Places aren't preset: Claude picks them per activity when a plan opens (lib/nado/plan.ts).
 import { ACTIVITY_CATALOG, type ActivityCategory } from "./activities";
 
-export const CATEGORIES = ["Sports", "Cafe", "Study", "Food", "Culture", "Games", "Other"] as const satisfies readonly ActivityCategory[];
+export const CATEGORIES = ["Sports", "Cafe", "Study", "Food", "Culture", "Games", "Place", "Other"] as const satisfies readonly ActivityCategory[];
 export type Category = ActivityCategory;
 
 export const isPreset = (name: string) => ACTIVITY_CATALOG.some((a) => a.name === name);
@@ -31,6 +31,7 @@ const QUESTIONS: Record<string, string[]> = {
   "cat:Study": ["What's your study soundtrack?", "Which class surprised you the most this semester?"],
   "cat:Food": ["What dish from home do you miss most?", "Best cheap eat near campus?"],
   "cat:Culture": ["What show or exhibit should we all see next?", "Last thing that genuinely surprised you on a stage or screen?"],
+  "cat:Place": ["What spot in the city do you go to when you need a break?", "Best hidden corner near campus that nobody knows about?"],
   "cat:Games": ["Most competitive game you've ever played?", "Do you play to win or play to have fun?"],
 };
 // When there's no question for the activity or its category

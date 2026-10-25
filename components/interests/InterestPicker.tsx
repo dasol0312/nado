@@ -66,10 +66,12 @@ export default function InterestPicker({ value, onChange, show = "all" }: { valu
     <>
       {CATEGORIES.map((cat) => {
         const list = activities.filter((a) => a.category === cat && (show === "all" || (show === "picked") === !!picked(a.name)));
-        if (!list.length) return null;
+        // Place has no presets, so on the full list it shows a hint until someone adds a spot
+        if (!list.length && !(cat === "Place" && show === "all")) return null;
         return (
           <div className="catgroup" key={cat}>
             <div className="eyebrow">{cat}</div>
+            {!list.length && <p className="small muted">Places you like to hang out, like Washington Square Park or the High Line. Add one below.</p>}
             <div className="chips">
               {list.map((a) => {
                 const t = picked(a.name);
@@ -85,8 +87,9 @@ export default function InterestPicker({ value, onChange, show = "all" }: { valu
       })}
       {show !== "picked" && <form className="stack" onSubmit={addCustom} autoComplete="off">
         <label className="eyebrow" htmlFor="customKw">Add your own</label>
+        <p className="small muted" style={{ marginTop: -4 }}>An activity or a place. Claude sorts it into a category.</p>
         <div className="row" style={{ flexWrap: "nowrap" }}>
-          <input className="input" id="customKw" placeholder="e.g. badminton, knitting" maxLength={40} value={custom} onChange={(e) => setCustom(e.target.value)} />
+          <input className="input" id="customKw" placeholder="e.g. badminton, Washington Square Park" maxLength={40} value={custom} onChange={(e) => setCustom(e.target.value)} />
           <button className="btn sm" type="submit" disabled={!!busy}>{busy ? <span className="spinner" /> : "Add"}</button>
         </div>
         {busy && (

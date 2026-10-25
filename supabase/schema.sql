@@ -45,7 +45,7 @@ create table places (
 create table activities (
   name text primary key,                      -- 'boba' (소문자, matching 에 쓰는 이름)
   label text not null,                        -- 'Boba'
-  category text not null check (category in ('Sports','Cafe','Study','Food','Culture','Games','Other')),
+  category text not null check (category in ('Sports','Cafe','Study','Food','Culture','Games','Place','Other')),
   max_size smallint not null check (max_size between 2 and 12),
   min_default smallint not null default 2 check (min_default between 2 and max_size),
   meet_place_id uuid references places(id),  -- 처음 만나는 캠퍼스 건물
