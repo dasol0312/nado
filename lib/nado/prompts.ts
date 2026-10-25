@@ -99,7 +99,7 @@ ${lines.join("\n")}
 export type WriteResult = { rooms: { room: string; invitation: string; icebreaker: string }[] };
 
 // v4.1 ④ 활동마다 만날 곳 + 활동 장소 고르기 --------------------------------------------------
-// 결과는 places / activities 에 저장해서 다음부터 재사용 (reset_demo 하면 다시 고름)
+// 결과는 places / activities 에 저장해서 다음부터 재사용
 
 // 데모 약도에 핀을 꽂을 수 있는 길 이름 (데모 HTML 약도의 NS_X / EW_Y 와 같은 이름)
 export const NS_STREETS = ["6th Ave", "MacDougal St", "Thompson St", "5th Ave", "University Pl / LaGuardia Pl", "Mercer St", "Broadway"];

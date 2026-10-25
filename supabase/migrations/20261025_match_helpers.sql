@@ -2,13 +2,11 @@
 --
 -- app_now()                  데모 시계까지 반영한 "지금"
 -- build_activity_slots()     free 시간 ∩ 지금~4시간 × 관심사 → activity_slots 다시 만들기
--- reset_demo()               심사위원 한 명 끝날 때마다: 방·채팅·심사위원 계정·AI 활동 지우기
 --
 -- 왜 DB 함수로?  Supabase API 는 한 번에 최대 1000줄만 돌려줘서, 800명 busy_blocks(약 8천 줄)를
 -- 브라우저/서버로 가져와 계산하면 조용히 잘림. 여기서 계산하면 rpc 한 번으로 끝남.
 --   const { data: count } = await sb.rpc("build_activity_slots")            // 지금(데모 시계 기준)
 --   await sb.rpc("build_activity_slots", { p_now: "2026-10-26T14:00:00-04:00" })
---   await sb.rpc("reset_demo")
 
 -- 데모 시계: base 가 있으면 base 에서부터 실제 시간만큼 흘러감, 없으면 진짜 지금
 create or replace function app_now() returns timestamptz
@@ -79,26 +77,4 @@ begin
 end;
 $$;
 
--- 심사위원 사이 초기화: 샘플 학생 800명과 기본 활동 16개만 남기고 지움.
--- Claude가 고른 장소도 지워서 다음 심사위원도 Claude가 장소를 고르는 장면을 처음부터 봄
-create or replace function reset_demo() returns json
-language plpgsql set search_path = public as $$
-declare
-  v_rooms int; v_judges int; v_ai int; v_places int;
-begin
-  delete from rooms where true;                       -- room_members, messages 는 cascade
-  get diagnostics v_rooms = row_count;
-  delete from activity_slots where true;
-  delete from students where not is_sample;           -- 심사위원/실제 가입자 + 그 사람의 busy_blocks, interests
-  get diagnostics v_judges = row_count;
-  delete from activities where by_ai;                 -- 심사위원이 추가한 키워드
-  get diagnostics v_ai = row_count;
-  update activities set meet_place_id = null, dest_place_id = null, reason = null where true;
-  delete from places where true;
-  get diagnostics v_places = row_count;
-  update app_clock set base = null, set_at = now(), label = null where id = 1;
-  return json_build_object('rooms', v_rooms, 'students', v_judges, 'ai_activities', v_ai, 'places', v_places);
-end;
-$$;
-
-grant execute on function app_now(), build_activity_slots(timestamptz, int), reset_demo() to anon, authenticated;
+grant execute on function app_now(), build_activity_slots(timestamptz, int) to anon, authenticated;

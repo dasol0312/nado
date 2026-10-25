@@ -129,10 +129,14 @@ All routes except auth and demo need the session cookie.
 - POST /api/rooms/[roomId]/reply `{ reply: "here" | "late" | "cant" }`: quick replies (no free-text chat)
 - PUT/DELETE /api/rooms/[roomId]/outfit `{ outfit: { color, top, shoes, hair } }`
 - POST /api/rooms/[roomId]/icebreaker `{ previous }`
-- Demo: PUT /api/demo/clock `{ preset }`, POST /api/demo/quick-setup,
-  POST /api/demo/sample-confirm `{ roomId }`, POST /api/demo/cancel-member
-  `{ roomId }`, POST /api/demo/reset (calls `reset_demo()`: deletes rooms,
-  judge/real accounts and Claude-picked places; keeps the 800 samples)
+- Clock Easter egg: PUT /api/demo/clock (tap the Matches clock five times).
+- Sample simulation: POST /api/demo/sample-confirm `{ roomId }`, used by Groups
+  so seeded students can confirm and the judge can enter the room.
+
+Quick setup, global reset, and simulated member cancellation routes were removed.
+Apply supabase/migrations/20261025_remove_demo_reset.sql to remove the old reset
+RPC from an existing database; this migration does not delete user data.
+The clock still changes shared demo time for all connected phones.
 
 The browser reads with the Supabase client and listens with Realtime. The glow
 screen and "found you" are Realtime broadcasts on `find-<roomId>`.

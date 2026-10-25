@@ -16,7 +16,6 @@ The team project `nado` is already set up with everything below. Don't re-run th
 |---|---|
 | `app_now()` | "Now", following the demo clock in `app_clock` |
 | `build_activity_slots(p_now?, p_hours = 4)` | Rebuilds `activity_slots`: each student's free time (campus time, 9–21h) in the next 4 hours × their interests, minus their busy blocks and rooms they're already in. Returns the row count. |
-| `reset_demo()` | Between judges: deletes rooms, chat, judge accounts, AI-added activities and Claude-picked places. Keeps the 800 samples and 16 presets. |
 | `claim_match_minute()` | True only for the first call in each minute, so the timer and every open phone don't match twice at once. |
 | `start_match_timer(url, secret)` / `stop_match_timer()` | Turns the matching timer on or off: every minute, on the minute (pg_cron → `GET /api/match`). Run in the SQL Editor after deploying. Not callable from the app. |
 
@@ -28,3 +27,11 @@ Computing free time in the database avoids the API's 1,000-row response limit (b
 - `--sql out/` writes a pasteable `campus.sql` instead (add `--parts 4` to split it).
 
 RLS is wide open for the demo. Tighten it before real students sign up.
+
+
+## Retired demo controls
+
+Global reset, quick setup and simulated cancellation API routes were removed.
+Apply migrations/20261025_remove_demo_reset.sql after the helper migrations on
+an existing project to drop the old reset_demo RPC without deleting any data.
+The clock Easter egg and sample-student confirmation remain for judge testing.
