@@ -9,8 +9,10 @@ import MinSizeSheet from "./MinSizeSheet";
 
 export type Picked = { activity: string; min: number };
 
-// show: "all" (every activity), "picked" (my interests), "unpicked" (add more)
-export default function InterestPicker({ value, onChange, show = "all" }: { value: Picked[]; onChange: (v: Picked[]) => void; show?: "all" | "picked" | "unpicked" }) {
+// show: "all" (every activity), "slots" (my picks as 3 slots, empty ones dashed), "picked", "unpicked"
+export default function InterestPicker({ value, onChange, show = "all", onEmptySlot }: {
+  value: Picked[]; onChange: (v: Picked[]) => void; show?: "all" | "slots" | "picked" | "unpicked"; onEmptySlot?: () => void;
+}) {
   const { activities, act, reloadActivities, toast } = useApp();
   const full = value.length >= MAX_INTERESTS;
   const fullMsg = `You can pick up to ${MAX_INTERESTS}. Remove one to add another.`;
@@ -65,9 +67,28 @@ export default function InterestPicker({ value, onChange, show = "all" }: { valu
     }
   }
 
+  const labelOf = (name: string) => activities.find((a) => a.name === name)?.label ?? name;
+  const empty = Math.max(0, MAX_INTERESTS - value.length);
+
   return (
     <>
-      {CATEGORIES.map((cat) => {
+      {show === "slots" && (
+        <div className="slots">
+          {value.map((v) => (
+            <button key={v.activity} className="slot filled" onClick={() => setOpen(v.activity)}>
+              <b>{labelOf(v.activity)}</b>
+              <small>min {v.min}</small>
+            </button>
+          ))}
+          {Array.from({ length: empty }, (_, i) => (
+            <button key={`empty-${i}`} className="slot" onClick={onEmptySlot} aria-label="Empty slot. Pick an interest below">
+              <span aria-hidden="true">+</span>
+              <small>Empty</small>
+            </button>
+          ))}
+        </div>
+      )}
+      {show !== "slots" && CATEGORIES.map((cat) => {
         const list = activities.filter((a) => a.category === cat && (show === "all" || (show === "picked") === !!picked(a.name)));
         // Place has no presets, so on the full list it shows a hint until someone adds a spot
         if (!list.length && !(cat === "Place" && show === "all")) return null;
@@ -89,7 +110,7 @@ export default function InterestPicker({ value, onChange, show = "all" }: { valu
           </div>
         );
       })}
-      {show !== "picked" && <form className="stack" onSubmit={addCustom} autoComplete="off">
+      {show !== "picked" && show !== "slots" && <form className="stack" onSubmit={addCustom} autoComplete="off">
         <label className="eyebrow" htmlFor="customKw">Add your own</label>
         <p className="small muted" style={{ marginTop: -4 }}>An activity or a place. Claude sorts it into a category.</p>
         <div className="row" style={{ flexWrap: "nowrap" }}>

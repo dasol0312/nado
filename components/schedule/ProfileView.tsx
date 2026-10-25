@@ -68,12 +68,16 @@ export default function ProfileView() {
 
       <div className="section-h"><h2>My interests</h2><span className="pill plain mono">{interests?.length ?? 0} / {MAX_INTERESTS}</span></div>
       <div className="card stack" style={{ gap: 10 }}>
-        {interests?.length
-          ? <><InterestPicker value={interests} onChange={changeInterests} show="picked" /><p className="small muted">Pick up to {MAX_INTERESTS}. Tap one to change its minimum group size or remove it.</p></>
-          : <p className="small muted">Pick up to {MAX_INTERESTS} things you’d do with other students. Browse below.</p>}
+        {interests
+          ? <InterestPicker value={interests} onChange={changeInterests} show="slots"
+              onEmptySlot={() => document.getElementById("browse")?.scrollIntoView({ behavior: "smooth", block: "start" })} />
+          : <div className="empty"><span className="spinner" /></div>}
+        <p className="small muted">{interests?.length
+          ? `Up to ${MAX_INTERESTS}. Tap one to change its minimum group size or remove it.`
+          : `Pick up to ${MAX_INTERESTS} things you’d do with other students.`}</p>
       </div>
 
-      <div className="section-h"><h2>Browse interests</h2><span className="small muted">{(interests?.length ?? 0) >= MAX_INTERESTS ? `${MAX_INTERESTS} of ${MAX_INTERESTS} picked` : "Tap to add"}</span></div>
+      <div className="section-h" id="browse" style={{ scrollMarginTop: 12 }}><h2>Browse interests</h2><span className="small muted">{(interests?.length ?? 0) >= MAX_INTERESTS ? `${MAX_INTERESTS} of ${MAX_INTERESTS} picked` : "Tap to add"}</span></div>
       {interests
         ? <div className="card stack" style={{ gap: 12 }}><InterestPicker value={interests} onChange={changeInterests} /></div>
         : <div className="empty"><span className="spinner" /></div>}
