@@ -16,7 +16,7 @@ No host. No profiles. No empty events.
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
 ![Supabase](https://img.shields.io/badge/Supabase-Postgres%20%2B%20Realtime-3FCF8E?logo=supabase&logoColor=white)
 
-**[Live app](https://nado-pied.vercel.app)** · **[Interactive prototype](https://claude.ai/artifact/VGToCEKiJ9WsL4UkSko2Ss)**
+**[Live app](https://nado-pied.vercel.app)** · **[Interactive prototype](https://dasol0312.github.io/nado/prototype/)**
 
 <p>
   <img src="docs/screens/04-matches.jpg" width="24%" alt="A plan arrives: board games at 10:00, meet at Kimmel Center">

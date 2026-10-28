@@ -1,0 +1,1375 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Nado</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: a phone-shaped app centered on the page, with a presenter's demo guide beside it on wide screens. */
+:root{
+  --bg:#e8e6ee; --frame:#1d1625; --surface:#fbfafd; --card:#ffffff; --ink:#1b1423; --muted:#6a6177; --line:#e4e0eb;
+  --accent:#57068c; --accent-ink:#ffffff; --accent-soft:#f0e6f8;
+  --amber:#9a5b00; --amber-soft:#fbefd8; --good:#1b7a51; --good-soft:#e0f2e9; --bad:#b0372b; --bad-soft:#fae5e2;
+  --glow:#ffd23f; --glow-ink:#2b1e00;
+  --map-bg:#efedf3; --map-street:#ffffff; --map-park:#d4e8d6; --map-path:#bcd8c0; --map-bldg:#dcd4e6; --map-campus:#e6dcf0; --logo-bg:transparent;
+  --shadow:0 40px 70px -40px rgba(45,20,70,.45);
+  --f-display:'Bricolage Grotesque','IBM Plex Sans',system-ui,sans-serif;
+  --f-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d0a11; --frame:#2c2436; --surface:#15111b; --card:#1f1927; --ink:#f1ecf7; --muted:#a59cb1; --line:#2f2839;
+  --accent:#c79de8; --accent-ink:#1d0b2b; --accent-soft:#2c1e3b;
+  --amber:#f0b45c; --amber-soft:#382810; --good:#62cf9a; --good-soft:#133224; --bad:#f08b7d; --bad-soft:#3a1915;
+  --map-bg:#1a1622; --map-street:#2b2435; --map-park:#1d3125; --map-path:#284230; --map-bldg:#2b2437; --map-campus:#2a2038; --logo-bg:#f5f0fc;
+  --shadow:0 40px 70px -40px rgba(0,0,0,.8); color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0d0a11; --frame:#2c2436; --surface:#15111b; --card:#1f1927; --ink:#f1ecf7; --muted:#a59cb1; --line:#2f2839;
+  --accent:#c79de8; --accent-ink:#1d0b2b; --accent-soft:#2c1e3b;
+  --amber:#f0b45c; --amber-soft:#382810; --good:#62cf9a; --good-soft:#133224; --bad:#f08b7d; --bad-soft:#3a1915;
+  --map-bg:#1a1622; --map-street:#2b2435; --map-park:#1d3125; --map-path:#284230; --map-bldg:#2b2437; --map-campus:#2a2038; --logo-bg:#f5f0fc;
+  --shadow:0 40px 70px -40px rgba(0,0,0,.8); color-scheme:dark }
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+.stage{display:flex;gap:40px;justify-content:center;align-items:flex-start;height:100%}
+/* iPhone-style frame: 393pt wide screen, titanium band, Dynamic Island, home indicator */
+.phone{position:relative;flex:none;width:min(417px,100%);height:min(876px,100%);background:var(--surface);
+  border:12px solid #111014;border-radius:64px;box-shadow:0 0 0 2px #4a4650,0 0 0 4px #1e1c22,var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+.island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:122px;height:36px;border-radius:20px;background:#000;z-index:70;pointer-events:none}
+.homebar{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:var(--ink);opacity:.85;z-index:70;pointer-events:none}
+.statusbar{flex:none;height:54px;padding:6px 30px 0 34px;display:flex;align-items:center;justify-content:space-between;font-family:-apple-system,'SF Pro Text',system-ui,sans-serif;font-size:16px;font-weight:600;letter-spacing:-.01em}
+.statusbar .icons{display:flex;gap:6px;align-items:center}
+.statusbar svg{display:block;fill:currentColor}
+.screen{flex:1;min-height:0;overflow-y:auto;padding:4px 18px 28px;display:flex;flex-direction:column;gap:16px}
+.tabbar{flex:none;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);background:color-mix(in srgb,var(--surface) 82%,transparent);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);padding-bottom:22px}
+.tabbar button{border:0;background:none;padding:8px 0 4px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px;font-weight:500;color:var(--muted);position:relative}
+.tabbar button svg{width:22px;height:22px}
+.tabbar button.on{color:var(--accent);font-weight:600}
+.tabbar .dot{position:absolute;top:8px;left:calc(50% + 8px);min-width:16px;height:16px;border-radius:8px;background:var(--accent);color:var(--accent-ink);font-size:10px;font-weight:700;line-height:16px;padding:0 4px}
+
+.appicon{width:20px;height:20px;border-radius:6px;background:var(--accent-soft) center/115% no-repeat;flex:none;display:block}
+.mascot{display:block;height:auto;max-width:100%;background:var(--logo-bg);border-radius:50%}
+.pop{position:absolute;inset:0;z-index:45;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;pointer-events:none;background:color-mix(in srgb,var(--surface) 70%,transparent)}
+.pop img{width:150px;animation:popin .45s cubic-bezier(.2,.9,.3,1.4)}
+.pop b{font-family:var(--f-display);font-weight:800;font-size:40px;letter-spacing:-.03em;color:var(--accent);animation:popin .45s .08s cubic-bezier(.2,.9,.3,1.4) both}
+@keyframes popin{from{transform:scale(.4) rotate(-8deg);opacity:0}}
+.wordmark{font-family:var(--f-display);font-weight:800;font-size:68px;line-height:.95;letter-spacing:-.03em;color:var(--accent)}
+h1{font-family:var(--f-display);font-weight:800;font-size:28px;line-height:1.1;letter-spacing:-.02em;margin:0;text-wrap:balance}
+h2{font-family:var(--f-display);font-weight:600;font-size:19px;line-height:1.2;letter-spacing:-.01em;margin:0;text-wrap:balance}
+h3{margin:0;font-size:15.5px;font-weight:600}
+p{margin:0}
+.muted{color:var(--muted)}
+.small{font-size:12.5px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.stack{display:flex;flex-direction:column;gap:8px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.between{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.link{border:0;background:none;padding:0;color:var(--accent);font-weight:600;text-decoration:underline;text-underline-offset:3px}
+
+.btn{border:0;border-radius:14px;padding:13px 16px;font-weight:600;background:var(--accent);color:var(--accent-ink);display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.block{width:100%}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.soft{background:var(--accent-soft);color:var(--accent)}
+.btn.sm{padding:8px 12px;border-radius:11px;font-size:13px}
+.btn.nado{font-family:var(--f-display);font-weight:800;font-size:17px;letter-spacing:-.01em;padding:9px 18px;border-radius:999px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:13px;font-weight:600}
+.input{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:12px 14px;width:100%}
+.err{color:var(--bad);font-size:13px}
+.code{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.code input{width:100%;aspect-ratio:4/5;max-width:100%;border:1.5px solid var(--line);background:var(--card);border-radius:12px;text-align:center;font-family:var(--f-mono);font-size:24px;font-weight:600}
+.code input:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.code.bad input{border-color:var(--bad)}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);background:var(--accent-soft);border-radius:12px;padding:3px;gap:3px}
+.seg button{border:0;background:none;border-radius:9px;padding:7px 4px;font-size:12.5px;font-weight:600;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px}
+.seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.sw{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.toggle{position:relative;width:44px;height:26px;flex:none}
+.toggle input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}
+.toggle span{position:absolute;inset:0;border-radius:13px;background:var(--line);transition:background .2s}
+.toggle span::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
+.toggle input:checked+span{background:var(--accent)}
+.toggle input:checked+span::after{transform:translateX(18px)}
+.toggle input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.pill.amber{background:var(--amber-soft);color:var(--amber)}
+.pill.good{background:var(--good-soft);color:var(--good)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.pill.plain{background:transparent;border:1px solid var(--line);color:var(--muted)}
+
+.steps{display:flex;gap:6px}
+.steps i{flex:1;height:4px;border-radius:2px;background:var(--line)}
+.steps i.on{background:var(--accent)}
+
+.grid{display:grid;grid-template-columns:30px repeat(7,1fr);gap:2px;user-select:none;-webkit-user-select:none}
+.grid.editable{touch-action:none}
+.grid .hd{font-size:11px;font-weight:600;text-align:center;color:var(--muted);padding-bottom:2px}
+.grid .hd.today{color:var(--accent)}
+.grid .tm{font-family:var(--f-mono);font-size:10px;color:var(--muted);text-align:right;padding-right:4px;line-height:20px}
+.grid .hd small{display:block;font-family:var(--f-mono);font-size:10px;font-weight:500}
+.grid .hd.today{color:var(--accent-ink)}
+.grid .hd.today span{display:inline-block;background:var(--accent);border-radius:8px;padding:1px 6px 2px}
+.grid .tm.now{color:var(--accent);font-weight:700}
+.cell.td{border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+.cell.td:not(.c-class):not(.c-fixed):not(.c-never):not(.c-confirmed){background:var(--accent-soft)}
+.cell.nowc{box-shadow:0 0 0 2px var(--accent);position:relative;z-index:1}
+.cell.nowc::after{content:"";position:absolute;left:-2px;right:-2px;height:2px;background:var(--bad);top:var(--nowpos,50%);border-radius:1px}
+.cell{height:20px;border-radius:4px;background:var(--surface);border:1px solid var(--line)}
+.editable .cell{cursor:crosshair}
+.c-class{background:var(--accent);border-color:var(--accent)}
+.c-fixed{background:var(--amber-soft);border-color:var(--amber)}
+.c-never{border-color:var(--bad);background:repeating-linear-gradient(135deg,var(--bad-soft) 0 3px,var(--card) 3px 6px)}
+.c-confirmed{background:var(--good);border-color:var(--good)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11.5px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend .cell{width:12px;height:12px;display:inline-block}
+
+.upload{display:flex;gap:12px;align-items:center;border:1.5px dashed var(--accent);border-radius:16px;padding:14px;background:var(--accent-soft);cursor:pointer;position:relative}
+.upload input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.upload svg{width:28px;height:28px;flex:none;color:var(--accent)}
+.classlist{display:flex;flex-direction:column;gap:4px;font-size:12.5px}
+.classlist div{display:flex;justify-content:space-between;gap:8px}
+.classlist b{font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.spinner{width:16px;height:16px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:spin .8s linear infinite;flex:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.catgroup{display:flex;flex-direction:column;gap:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 12px;font-size:13.5px;display:inline-flex;gap:6px;align-items:baseline}
+.chip small{font-size:11px;color:var(--muted)}
+.chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip.on small{color:inherit;opacity:.8}
+
+.sheet-wrap{position:absolute;inset:0;background:rgba(15,8,22,.45);display:flex;align-items:flex-end;z-index:30}
+.sheet{width:100%;background:var(--card);border-radius:24px 24px 0 0;padding:20px 20px 28px;display:flex;flex-direction:column;gap:16px;animation:up .25s ease-out}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
+.stepper{display:flex;align-items:center;justify-content:center;gap:22px}
+.stepper button{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface);font-size:22px;line-height:1}
+.stepper output{font-family:var(--f-display);font-weight:800;font-size:46px;min-width:70px;text-align:center}
+.aibox{display:flex;gap:10px;align-items:flex-start;background:var(--accent-soft);border-radius:14px;padding:10px 12px;font-size:13px}
+.aibox .ai{font-family:var(--f-mono);font-size:10.5px;font-weight:600;background:var(--accent);color:var(--accent-ink);border-radius:6px;padding:1px 6px;flex:none;margin-top:1px}
+
+.rec{display:flex;flex-direction:column;gap:8px}
+.rec .top{display:flex;align-items:center;gap:4px 8px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.rec .top .time{color:var(--ink);font-weight:600;white-space:nowrap}
+.rec .top .pill{margin-left:auto}
+.rec .kw{font-family:var(--f-display);font-weight:800;font-size:23px;line-height:1.05;letter-spacing:-.02em}
+.rec .kw small{font-family:var(--f-body);font-weight:400;letter-spacing:0;font-size:13px;color:var(--muted);margin-left:6px}
+.rec .meta{font-size:12.5px;color:var(--muted);display:flex;gap:4px 10px;flex-wrap:wrap}
+.rec .foot{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.rec .place{display:flex;gap:4px;align-items:center;font-size:12.5px;min-width:0}
+.rec .place span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rec .place svg{width:14px;height:14px;flex:none;color:var(--accent)}
+.rec.hl{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.section-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:4px}
+.empty{text-align:center;padding:22px 12px;color:var(--muted);font-size:13.5px;border:1px dashed var(--line);border-radius:16px}
+.progress{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.progress i{display:block;height:100%;background:var(--good);transition:width .4s}
+
+.banner{position:absolute;left:10px;right:10px;top:56px;z-index:25;animation:drop .35s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes drop{from{transform:translateY(-120%)}}
+.banner-in{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:12px 14px;box-shadow:0 18px 40px -18px rgba(30,10,50,.5);display:flex;flex-direction:column;gap:6px}
+.banner .b-app{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted)}
+
+.banner .b-title{font-weight:600}
+.banner .b-actions{display:flex;gap:8px;margin-top:2px}
+
+.toast{position:absolute;left:50%;bottom:104px;transform:translateX(-50%);z-index:40;background:var(--ink);color:var(--surface);font-size:13px;padding:9px 14px;border-radius:12px;max-width:calc(100% - 32px);text-align:center;animation:fade .2s}
+@keyframes fade{from{opacity:0}}
+
+.backbar{display:flex;align-items:center;gap:6px}
+.backbar button{border:0;background:none;padding:6px 6px 6px 0;display:flex;align-items:center;gap:2px;color:var(--accent);font-weight:600}
+.members{display:flex;flex-wrap:wrap;gap:8px}
+.mem{display:flex;align-items:center;gap:6px;font-size:13px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px 10px 4px 4px}
+.mem i{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:11px;font-weight:700;color:#fff}
+.mem.me{border-color:var(--accent)}
+.map{display:block;width:100%;height:auto;border-radius:14px}
+.route{display:grid;grid-template-columns:20px 1fr;gap:4px 10px;font-size:13px}
+.route .dotm{width:14px;height:14px;border-radius:50%;background:var(--accent);margin-top:3px}
+.route .doto{width:14px;height:14px;border-radius:50%;border:2.5px solid var(--accent);margin-top:3px}
+.route .line{width:2px;height:14px;margin-left:6px;background:repeating-linear-gradient(var(--accent) 0 3px,transparent 3px 6px)}
+.demo-act{border:1px dashed var(--line);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.demo-act .eyebrow{color:var(--amber)}
+
+.optgrid{display:flex;flex-wrap:wrap;gap:6px}
+.swatch{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);padding:0}
+.swatch.on{outline:3px solid var(--accent);outline-offset:2px}
+.hint{font-family:var(--f-display);font-weight:800;font-size:25px;line-height:1.15;letter-spacing:-.02em}
+.hintlist{display:flex;flex-direction:column;gap:6px}
+.hintlist div{display:flex;gap:8px;align-items:baseline;font-size:14px}
+.hintlist .n{font-family:var(--f-mono);font-size:11px;color:var(--muted);flex:none;width:44px}
+.hintlist .locked{color:var(--muted)}
+.targets{display:flex;gap:6px;flex-wrap:wrap}
+
+.glow{position:absolute;inset:0;z-index:50;background:var(--glow);color:var(--glow-ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:28px;text-align:center}
+.glow::before{content:"";position:absolute;inset:0;background:#fff;opacity:0;animation:pulse 1.1s ease-in-out infinite alternate;pointer-events:none}
+.glow>*{position:relative}
+.glow .big{font-family:var(--f-display);font-weight:800;font-size:60px;line-height:.95;letter-spacing:-.03em}
+.glow .nick{font-family:var(--f-display);font-weight:600;font-size:24px}
+.glow .btn{background:var(--glow-ink);color:var(--glow)}
+.glow .found{background:rgba(255,255,255,.55);border-radius:14px;padding:10px 14px;font-weight:600}
+@keyframes pulse{to{opacity:.38}}
+
+.guide{width:300px;flex:none;display:flex;flex-direction:column;gap:14px;padding-top:24px}
+.guide h2{font-size:22px}
+.guide ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.guide li{display:grid;grid-template-columns:24px 1fr;gap:8px;padding:8px 10px;border-radius:12px;font-size:13.5px;align-items:start}
+.guide li .ck{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;font-family:var(--f-mono);font-size:10.5px;color:var(--muted);margin-top:1px}
+.guide li.done .ck{background:var(--good);border-color:var(--good);color:#fff}
+.guide li.now{background:var(--card);border:1px solid var(--line)}
+.guide li small{display:block;color:var(--muted);font-size:12px}
+.guide .ai-state{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
+
+@media (max-width:860px){.guide{display:none}}
+@media (max-width:600px){
+  body{padding-block:0}
+  .phone{width:100%;height:100%;border-width:0;border-radius:0;box-shadow:none}
+  .statusbar,.island,.homebar{display:none}
+  .tabbar{padding-bottom:env(safe-area-inset-bottom,0px)}
+  .banner{top:8px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* matches the current app */
+.cattabs{display:flex;gap:20px;overflow-x:auto;scrollbar-width:none;margin:-2px -14px 2px;padding:0 14px;border-bottom:1px solid var(--line);-webkit-mask-image:linear-gradient(to right,#000 82%,transparent);mask-image:linear-gradient(to right,#000 82%,transparent)}
+.cattabs::-webkit-scrollbar{display:none}
+.cattabs button{flex:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;padding:4px 0 10px;font:inherit;font-size:14px;font-weight:600;color:var(--muted);display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.cattabs button.on{color:var(--ink);border-bottom-color:var(--accent)}
+.cattabs i{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.addown{border-top:1px solid var(--line);padding-top:14px;margin-top:2px}
+.chip.off{opacity:.45}
+.slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.slot{min-height:64px;border-radius:14px;border:1.5px dashed var(--line);background:transparent;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 6px;text-align:center;font:inherit;cursor:pointer}
+.slot>span{font-size:20px;line-height:1;color:var(--accent);opacity:.7}
+.slot small{font-size:11px}
+.slot.filled{border:1.5px solid var(--accent);background:var(--accent);color:var(--accent-ink)}
+.slot.filled b{font-size:13.5px;line-height:1.2}
+.slot.filled small{opacity:.8}
+.next-check{display:flex;align-items:center;gap:8px;min-height:36px;padding:0 4px;font-size:13px;color:var(--ink)}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--good);flex:none;animation:breathe 2.4s ease-in-out infinite}
+@keyframes breathe{50%{opacity:.45}}
+.next-in{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.ring{width:14px;height:14px;border-radius:50%;background:conic-gradient(var(--accent) var(--p,0deg),var(--line) 0);-webkit-mask:radial-gradient(circle,transparent 3.5px,#000 4px);mask:radial-gradient(circle,transparent 3.5px,#000 4px)}
+@media (prefers-reduced-motion:reduce){.live-dot{animation:none}}
+.rec .invite{font-size:14px;line-height:1.35;margin:0}
+.clockpill{user-select:none;-webkit-user-select:none;cursor:default;border:0;font:inherit}
+.btn svg.home{width:20px;height:20px}
+</style>
+</head>
+<body>
+
+
+<div class="stage">
+  <div class="phone" id="phone">
+    <div class="island" aria-hidden="true"></div>
+    <div class="statusbar" aria-hidden="true"><span id="clock">9:41</span><span class="icons">
+      <svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 2.3c2.4 0 4.6.9 6.2 2.5l1.2-1.2A10.4 10.4 0 0 0 8 .6 10.4 10.4 0 0 0 .6 3.6l1.2 1.2A8.7 8.7 0 0 1 8 2.3Zm0 3.4c1.5 0 2.9.6 3.9 1.6l1.2-1.2A7.2 7.2 0 0 0 8 4a7.2 7.2 0 0 0-5.1 2.1l1.2 1.2c1-1 2.4-1.6 3.9-1.6Zm0 3.4c.6 0 1.1.2 1.5.6L8 11.2 6.5 9.7c.4-.4.9-.6 1.5-.6Z"/></svg>
+      <svg width="27" height="13" viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="20" height="9" rx="2"/><rect x="24.5" y="4.5" width="1.6" height="4" rx=".8" opacity=".4"/></svg>
+    </span></div>
+    <div class="banner" id="banner" hidden></div>
+    <main class="screen" id="screen"></main>
+    <nav class="tabbar" id="tabbar" hidden></nav>
+    <div class="sheet-wrap" id="sheet" hidden></div>
+    <div class="glow" id="glow" hidden></div>
+    <div class="pop" id="pop" hidden aria-hidden="true"></div>
+    <div class="toast" id="toast" role="status" hidden></div>
+    <div class="homebar" aria-hidden="true"></div>
+  </div>
+  <aside class="guide" id="guide"></aside>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function hash(str){let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+
+/* ---------- Claude (sample) ---------- */
+let SAMPLE = null;
+const sampleReady = Promise.resolve()
+  .then(() => (window.claude && window.claude.use) ? window.claude.use('sample') : null)
+  .then(s => { SAMPLE = s; renderGuide(); return s; })
+  .catch(() => null);
+function aiError(code){
+  if (code === 'not_granted' || code === 'sampling_disabled') return 'Claude isn’t allowed on this page, so the AI step was skipped.';
+  if (code === 'rate_limited') return 'Too many requests right now. Try again in a minute.';
+  if (code === 'image_rejected') return 'That image couldn’t be read. Upload a PNG or JPG screenshot.';
+  if (code === 'images_unavailable') return 'This view can’t send images to the AI.';
+  return 'The AI didn’t answer. Try again, or continue with the sample.';
+}
+
+/* ---------- constants ---------- */
+const MASCOT = 'data:image/webp;base64,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';
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const DAY_EN = {Mon:0,Tue:1,Wed:2,Thu:3,Fri:4,Sat:5,Sun:6};
+const H0 = 9, H1 = 21, NH = H1 - H0;
+const CATS = ['Sports','Cafe','Food','Culture','Games','Place','Other'];
+const MAX_INT = 3;
+const FULL_MSG = 'You can pick up to 3. Remove one to add another.';
+// meet = where the group finds each other (always an NYU building), dest = where the activity happens
+const KW = {
+  soccer:{label:'Soccer',cat:'Sports',max:10,minDef:4,meet:'paulson',dest:'paulson'},
+  basketball:{label:'Basketball',cat:'Sports',max:10,minDef:4,meet:'paulson',dest:'paulson'},
+  running:{label:'Running',cat:'Sports',max:6,minDef:2,meet:'silver',dest:'wsp'},
+  climbing:{label:'Climbing',cat:'Sports',max:4,minDef:2,meet:'paulson',dest:'paulson'},
+  boba:{label:'Boba',cat:'Cafe',max:4,minDef:2,meet:'kimmel',dest:'surreal'},
+  coffee:{label:'Coffee',cat:'Cafe',max:4,minDef:2,meet:'silver',dest:'think'},
+  bakery:{label:'Bakery run',cat:'Cafe',max:4,minDef:2,meet:'silver',dest:'think'},
+  study:{label:'Study session',cat:'Other',max:5,minDef:2,meet:'bobst',dest:'bobst'},
+  homework:{label:'Problem sets',cat:'Other',max:4,minDef:2,meet:'bobst',dest:'bobst'},
+  ramen:{label:'Ramen',cat:'Food',max:4,minDef:2,meet:'kimmel',dest:'karakatta'},
+  pizza:{label:'Pizza',cat:'Food',max:6,minDef:2,meet:'kimmel',dest:'macdougal'},
+  'korean food':{label:'Korean food',cat:'Food',max:6,minDef:3,meet:'kimmel',dest:'macdougal'},
+  museum:{label:'Museum trip',cat:'Culture',max:5,minDef:2,meet:'silver',dest:'arch'},
+  movie:{label:'Movie night',cat:'Culture',max:5,minDef:2,meet:'kimmel',dest:'ifc'},
+  'board games':{label:'Board games',cat:'Games',max:6,minDef:3,meet:'kimmel',dest:'kimmel'},
+  chess:{label:'Chess',cat:'Games',max:4,minDef:2,meet:'kimmel',dest:'chess'},
+  'washington square park':{label:'Washington Square Park',cat:'Place',max:6,minDef:2,meet:'silver',dest:'wsp'},
+  'bobst library':{label:'Bobst Library',cat:'Place',max:4,minDef:2,meet:'bobst',dest:'bobst'},
+};
+const BASE_KWS = Object.keys(KW);
+const CAT_MEET = {Place:'silver',Sports:'paulson',Cafe:'kimmel',Study:'bobst',Food:'kimmel',Culture:'silver',Games:'kimmel',Other:'kimmel'};
+const CAT_DEST = {Place:'wsp',Sports:'paulson',Cafe:'think',Study:'bobst',Food:'macdougal',Culture:'arch',Games:'kimmel',Other:'wsp'};
+const PLACES = {
+  kimmel:{name:'Kimmel Center lobby',tag:'Kimmel Center',addr:'60 Washington Sq S',campus:true,x:184,y:205,side:'l'},
+  bobst:{name:'Bobst Library entrance',tag:'Bobst Library',addr:'70 Washington Sq S',campus:true,x:222,y:205,side:'r'},
+  silver:{name:'Silver Center lobby',tag:'Silver Center',addr:'100 Washington Sq E',campus:true,x:252,y:112,side:'r'},
+  paulson:{name:'Paulson Center lobby',tag:'Paulson Center',addr:'181 Mercer St',campus:true,x:300,y:234,side:'l'},
+  arch:{name:'Washington Square Arch',tag:'Washington Sq Arch',addr:'Washington Square Park',campus:false,x:168,y:70,side:'r'},
+  wsp:{name:'Washington Square Park loop',tag:'Park loop',addr:'Washington Square Park',campus:false,x:168,y:126,side:'r'},
+  chess:{name:'Park chess tables (SW corner)',tag:'Chess tables',addr:'Washington Square Park',campus:false,x:118,y:170,side:'r'},
+  surreal:{name:'Surreal Creamery (boba)',tag:'Surreal Creamery',addr:'126 MacDougal St',campus:false,x:102,y:246,side:'r'},
+  think:{name:'Think Coffee',tag:'Think Coffee',addr:'248 Mercer St',campus:false,x:300,y:206,side:'r'},
+  karakatta:{name:'Karakatta (ramen)',tag:'Karakatta',addr:'230 Thompson St',campus:false,x:160,y:232,side:'r'},
+  ifc:{name:'IFC Center (movies)',tag:'IFC Center',addr:'323 6th Ave',campus:false,x:40,y:230,side:'r'},
+  macdougal:{name:'MacDougal St food strip',tag:'MacDougal St eats',addr:'MacDougal St, south of the park',campus:false,x:90,y:206,side:'l'},
+};
+const COLORS = [['black','#1f1f22'],['white','#f4f4f2'],['gray','#9a9aa0'],['blue','#2f6fd6'],['red','#d33b36'],['green','#2f9a5b'],['yellow','#f2c230'],['purple','#7a3fb8'],['beige','#d8c4a0'],['navy','#22305e']];
+const TOPS = ['hoodie','T-shirt','button-up','sweater','jacket','sweatshirt'];
+const SHOES = ['white sneakers','black sneakers','boots','loafers','high-tops'];
+const HAIR = ['black hair','brown hair','blonde hair','wearing a cap','wearing glasses'];
+const ADJ = ['Violet','Yellow','Green','Blue','Orange','Pink','Silver','Coral','Mint','Lavender','Sky','Amber'];
+const ANI = ['Otter','Penguin','Hedgehog','Raccoon','Squirrel','Owl','Panda','Fox','Cat','Rabbit','Alpaca','Koala','Hamster','Duck'];
+const AVA = ['#7a3fb8','#c2541a','#1b7a51','#2f6fd6','#b0372b','#8a6d00','#0f7c84','#a3367a'];
+const QUESTIONS = ['What surprised you most when you got to NYU?','What’s the weirdest thing you’ve seen in Washington Square Park?','What’s your favorite class this semester?','Boba sweetness: 0, 50, or 100 percent?','Is there a food from home you still can’t find in NYC?','Where do you go in Manhattan on weekends?','What’s your strangest subway moment so far?'];
+
+// activity-specific icebreakers (offline fallback; Claude writes new ones when connected)
+const QBANK = {
+  soccer:['Which position do you secretly think you’d be great at?','Messi or Ronaldo, and you have to defend it for 30 seconds.','Worst sports injury you’ve ever gotten from a casual game?'],
+  basketball:['If you had one signature move, what would it be called?','Who on this team is taking the last shot, and why is it you?','What’s your free-throw ritual?'],
+  running:['What’s the longest you’ve ever run without stopping?','What’s on your running playlist right now?','Best route in the city that isn’t the Hudson River path?'],
+  climbing:['Which hold type do you hate the most?','What scared you more: your first lead climb or your first NYC subway ride?','Most ridiculous fall you’ve taken?'],
+  boba:['What’s your go-to order, sugar and ice level included?','Tapioca pearls or a topping hot take?','Best boba you’ve ever had, and where?'],
+  coffee:['How do you take your coffee, and how many a day is too many?','What’s the best café in the city to study in?','Have you ever had a coffee so bad you still remember it?'],
+  bakery:['Croissant, bagel, or something else for the perfect breakfast?','Which NYC bakery line is actually worth the wait?','Sweet or savory pastry person?'],
+  study:['What class are you avoiding studying for right now?','Floor of Bobst you’d defend to the end?','Pomodoro, all-nighter, or chaos?'],
+  homework:['Which problem set this week made you question everything?','Do you start homework the day it’s assigned or the day it’s due?','Who’s the best TA you’ve had so far?'],
+  ramen:['Tonkotsu, shoyu, miso, or shio?','Do you drink the broth at the end, and is that a personality trait?','How many toppings is too many?'],
+  pizza:['Fold it or eat it flat, and why?','Dollar slice or fancy pie for the rest of your life?','Pineapple on pizza: yes, no, or it depends?'],
+  'korean food':['Tteokbokki spice level: mild, medium, or crying?','What’s your perfect Korean barbecue order?','Ramyeon at 2am: which brand?'],
+  museum:['If you could steal one painting in the city, which one?','Which museum is the most underrated in New York?','Do you read every placard or just vibe?'],
+  movie:['Which movie can you quote start to finish?','Best movie you’ve seen in a theater this year?','What movie should everyone here watch before graduating?'],
+  'board games':['Which board game has ended a friendship for you?','Are you a rules-reader or a learn-as-we-go player?','Strategy or chaos games?'],
+  chess:['What opening do you always play, and why?','Have you ever played the chess hustlers in the park?','Speed chess or a long game?'],
+  'cat:Sports':['What sport did you play as a kid that you’ve given up?','Pregame snack of choice?'],
+  'cat:Cafe':['Sweet tooth or bitter coffee person?','Best place to sit for hours without buying a second drink?'],
+  'cat:Study':['What’s your study soundtrack?','Which class surprised you the most this semester?'],
+  'cat:Food':['What dish from home do you miss most?','Best cheap eat near campus?'],
+  'cat:Culture':['What show or exhibit should we all see next?','Last thing that genuinely surprised you on a stage or screen?'],
+  'cat:Place':['What spot in the city do you go to when you need a break?','Best hidden corner near campus that nobody knows about?'],
+  'cat:Games':['Most competitive game you’ve ever played?','Do you play to win or play to have fun?'],
+};
+const questionsFor = kw => QBANK[kw] || QBANK['cat:' + catOf(kw)] || QUESTIONS;
+
+const SAMPLE_CLASSES = [
+  {course:'CSCI-UA 102 Data Structures',day:'Mon',start:'09:30',end:'10:45'},
+  {course:'CSCI-UA 102 Data Structures',day:'Wed',start:'09:30',end:'10:45'},
+  {course:'MATH-UA 121 Calculus I',day:'Tue',start:'11:00',end:'12:15'},
+  {course:'MATH-UA 121 Calculus I',day:'Thu',start:'11:00',end:'12:15'},
+  {course:'EXPOS-UA 1 Writing as Inquiry',day:'Mon',start:'14:00',end:'15:15'},
+  {course:'EXPOS-UA 1 Writing as Inquiry',day:'Wed',start:'14:00',end:'15:15'},
+  {course:'CORE-UA 400 Texts & Ideas',day:'Tue',start:'15:30',end:'16:45'},
+  {course:'CORE-UA 400 Texts & Ideas',day:'Thu',start:'15:30',end:'16:45'},
+  {course:'CSCI-UA 102 Recitation',day:'Fri',start:'11:00',end:'12:15'},
+];
+
+/* ---------- seed students (demo pool) ---------- */
+const SEEDS = (() => {
+  const r = mulberry32(2026), pick = a => a[Math.floor(r()*a.length)];
+  const used = new Set(), out = [];
+  const pop = ['boba','boba','soccer','soccer','running','study','study','ramen','coffee','basketball','board games','pizza','museum','korean food','climbing','movie','chess','homework','bakery'];
+  for (let i = 0; i < 46; i++) {
+    let nick; do { nick = pick(ADJ) + ' ' + pick(ANI); } while (used.has(nick)); used.add(nick);
+    const busy = Array.from({length:7}, () => Array(NH).fill(false));
+    const pairs = [[0,2],[1,3],[0,2],[1,3],[4,4]];
+    for (let c = 0; c < 4; c++) {
+      const days = pick(pairs), sh = 9 + Math.floor(r()*9), len = 1 + (r() < .5 ? 1 : 0);
+      for (const d of new Set(days)) for (let h = sh; h < sh+len && h < H1; h++) busy[d][h-H0] = true;
+    }
+    for (let d = 0; d < 7; d++) {
+      if (r() < .35) busy[d][0] = true;
+      if (r() < .5) { busy[d][NH-1] = true; if (r() < .5) busy[d][NH-2] = true; }
+      if (d >= 5 && r() < .4) { const s = 10 + Math.floor(r()*6); for (let h = s; h < s+3; h++) busy[d][h-H0] = true; }
+    }
+    const n = 2 + (r() < .4 ? 1 : 0), tastes = [];
+    while (tastes.length < n) {
+      const k = pick(pop); if (tastes.some(t => t.kw === k)) continue;
+      const info = KW[k]; tastes.push({kw:k, min: Math.min(info.max, info.minDef + (r() < .3 ? 1 : 0))});
+    }
+    out.push({id:'s'+i, nick, busy, tastes, color: AVA[i % AVA.length],
+      outfit:{color: pick(COLORS)[0], top: pick(TOPS), shoes: pick(SHOES), hair: pick(HAIR)}});
+  }
+  return out;
+})();
+const seedById = id => SEEDS.find(s => s.id === id);
+
+/* ---------- state ---------- */
+const emptyGrid = () => Array.from({length:7}, () => Array(NH).fill(null));
+function freshState(){
+  return {
+    step:'login', email:'', loginErr:'', codeErr:'', nick: ADJ[Math.floor(Math.random()*ADJ.length)] + ' ' + ANI[Math.floor(Math.random()*ANI.length)],
+    grid: emptyGrid(), classes: [], mode:'never', parse:{state:'idle'},
+    tastes: [], custom:{state:'idle', msg:''}, sheet:null,
+    notifOn:true, recs:{}, history:[], confirmed:[], excluded:{}, pushed:[], rematch:[], highlight:null,
+    tab:'inbox', view:null, game:null, catTab:'Sports', clockSheet:false, left:{},
+    flags:{room:false, map:false, glow:false, dissolve:false, found:false},
+  };
+}
+let S = freshState();
+let timers = [];
+const later = (fn, ms) => { const t = setTimeout(fn, ms); timers.push(t); return t; };
+
+/* ---------- helpers ---------- */
+const kwInfo = k => KW[k] || {label:k, cat:'Other', max:4, minDef:2, meet:'kimmel', dest:'wsp'};
+const catOf = k => kwInfo(k).cat;
+const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const dayIdx = d => (d.getDay() + 6) % 7;
+const h12 = h => `${((h + 11) % 12) + 1}`;
+const ampm = h => h < 12 ? 'am' : 'pm';
+const range = h => `${h12(h)}${ampm(h) !== ampm(h+1) ? ampm(h) : ''}–${h12(h+1)}${ampm(h+1)}`;
+const gridHour = h => `${h12(h)}${h < 12 ? 'a' : 'p'}`;
+// demo clock: the matching window is "now + 4 hours", so the demo can jump to a busy weekday moment
+function nextWeekday(target, h, m){ const r = new Date(), d = new Date(r.getFullYear(), r.getMonth(), r.getDate()); d.setDate(d.getDate() + (target - dayIdx(d) + 7) % 7); d.setHours(h, m, 0, 0); return d; }
+const CLOCKS = [
+  {id:'mon1150', label:'Mon 11:50 am · morning classes let out', at:() => nextWeekday(0,11,50)},
+  {id:'tue1205', label:'Tue 12:05 pm · Calc ends in 10 min', at:() => nextWeekday(1,12,5)},
+  {id:'wed1505', label:'Wed 3:05 pm · Writing ends in 10 min', at:() => nextWeekday(2,15,5)},
+  {id:'real', label:'Real time', at:() => null},
+];
+let clock = {id:'mon1150', base:null, set:0};
+function setClock(id){ const c = CLOCKS.find(c => c.id === id) || CLOCKS[0]; clock = {id:c.id, base:c.at(), set:Date.now()}; }
+setClock('mon1150');
+const now = () => clock.base ? new Date(clock.base.getTime() + (Date.now() - clock.set)) : new Date();
+const HORIZON = 4 * 60;
+const toMin = t => { const [h, m] = String(t).split(':').map(Number); return h * 60 + (m || 0); };
+const fmtT = min => { const h = Math.floor(min / 60), m = min % 60; return `${h12(h)}${m ? ':' + String(m).padStart(2,'0') : ''}${ampm(h)}`; };
+const fmtRange = (a, b) => { const sameHalf = ampm(Math.floor(a / 60)) === ampm(Math.floor(b / 60)); return `${sameHalf ? fmtT(a).replace(/am|pm/, '') : fmtT(a)}–${fmtT(b)}`; };
+function whenLabel(r){
+  const [, m, d] = r.iso.split('-').map(Number), mins = Math.round((r.t - now().getTime()) / 60000);
+  const rel = mins <= 0 ? 'happening now' : mins < 60 ? `starts in ${mins} min` : `starts in ${Math.floor(mins / 60)}h${mins % 60 ? ' ' + (mins % 60) + 'm' : ''}`;
+  return `${DAYS[r.di]} ${m}/${d} · ${rel}`;
+}
+const keyRange = k => { const [ds, st] = k.split('@'); return [ds, +st, +st + 60]; };
+function userFreeRange(di, a, b, isoDay){
+  if (a < H0 * 60 || b > H1 * 60) return false;
+  for (const c of S.classes) if (DAY_EN[c.day] === di && a < toMin(c.end) && b > toMin(c.start)) return false;
+  for (let h = Math.floor(a / 60); h < Math.ceil(b / 60); h++) { const v = S.grid[di][h - H0]; if (v === 'fixed' || v === 'never' || (v === 'class' && !S.classes.length)) return false; }
+  for (const k of S.confirmed) { const [ds, cs, ce] = keyRange(k); if (ds === isoDay && a < ce && b > cs) return false; }
+  return true;
+}
+function seedFree(p, di, a, b){ for (let h = Math.floor(a / 60); h < Math.ceil(b / 60); h++) if (h < H0 || h >= H1 || p.busy[di][h - H0]) return false; return true; }
+function slotList(){
+  const n = now(), day0 = new Date(n.getFullYear(), n.getMonth(), n.getDate()), di = dayIdx(n), nowMin = n.getHours() * 60 + n.getMinutes(), isoDay = iso(n);
+  const starts = new Set();
+  for (let t = Math.ceil((nowMin + 5) / 30) * 30; t <= nowMin + HORIZON; t += 30) starts.add(t);
+  for (const c of S.classes) if (DAY_EN[c.day] === di) { const ce = toMin(c.end); if (ce > nowMin && ce <= nowMin + HORIZON) starts.add(ce); }
+  return [...starts].sort((x, y) => x - y).map(st => {
+    const after = S.classes.find(c => DAY_EN[c.day] === di && toMin(c.end) === st);
+    return {di, iso:isoDay, start:st, end:st + 60, t: day0.getTime() + st * 60000, key: isoDay + '@' + st, after: after ? after.course.split(' ').slice(0, 2).join(' ') : ''};
+  });
+}
+function timeFit(cat, st){
+  const h = st / 60, near = (x, y) => h >= x && h < y;
+  if (cat === 'Food') return near(11.5, 14) || near(17.5, 20.5) ? .5 : 0;
+  if (cat === 'Cafe') return near(13.5, 17.5) ? .35 : near(10, 13.5) ? .15 : 0;
+  if (cat === 'Sports') return near(15, 20) ? .3 : 0;
+  if (cat === 'Study') return near(9, 12) || near(19, 23) ? .25 : .1;
+  if (cat === 'Culture') return near(17, 23) ? .3 : 0;
+  if (cat === 'Games') return near(16, 23) ? .25 : 0;
+  return 0;
+}
+function teamMinOf(r){ return Math.max(2, r.userMin, ...r.members.map(m => m.min)); }
+
+function buildTeams(s, exclude){
+  const teams = [];
+  for (const cat of [...new Set(S.tastes.map(t => t.cat))]) {
+    const mine = S.tastes.filter(t => t.cat === cat);
+    const cands = SEEDS.filter(p => !exclude.includes(p.id) && seedFree(p, s.di, s.start, s.end) && p.tastes.some(t => catOf(t.kw) === cat))
+      .map(p => { const ts = p.tastes.filter(t => catOf(t.kw) === cat); return {p, min: Math.min(...ts.map(t => t.min)), kws: ts.map(t => t.kw)}; });
+    if (!cands.length) continue;
+    let kw = mine[0].kw, bestShare = -1;
+    for (const t of mine) { const n = cands.filter(c => c.kws.includes(t.kw)).length; if (n > bestShare) { bestShare = n; kw = t.kw; } }
+    const userMin = mine.find(t => t.kw === kw).min, max = kwInfo(kw).max;
+    cands.sort((a,b) => (b.kws.includes(kw) - a.kws.includes(kw)) || (hash(a.p.id + s.key) - hash(b.p.id + s.key)));
+    let pool = cands.filter(c => c.min <= max).slice(0, max - 1);
+    for (let guard = 0; guard < 10; guard++) {
+      const size = pool.length + 1, next = pool.filter(c => c.min <= size);
+      if (next.length === pool.length) break; pool = next;
+    }
+    const size = pool.length + 1, teamMin = Math.max(2, userMin, ...pool.map(c => c.min));
+    if (size < teamMin) continue;
+    teams.push({cat, kw, max, userMin, members: pool.map(c => ({id:c.p.id, min:c.min})), score: size / max + bestShare * 0.01});
+  }
+  return teams;
+}
+function recompute(){
+  const keep = {};
+  for (const r of Object.values(S.recs)) if (r.status !== 'new') keep[r.key] = r;
+  const cands = [];
+  for (const sl of slotList()) {
+    if (keep[sl.key] || S.left[sl.key] || !userFreeRange(sl.di, sl.start, sl.end, sl.iso)) continue;
+    for (const t of buildTeams(sl, S.excluded[sl.key] || [])) cands.push({...sl, ...t, score: t.score + timeFit(t.cat, sl.start) + (sl.after ? .15 : 0), force: S.rematch.includes(sl.key)});
+  }
+  cands.sort((x, y) => y.score - x.score || x.start - y.start);
+  const picked = [], kept = Object.values(keep);
+  const forced = cands.find(c => c.force); if (forced) picked.push(forced);
+  const overlaps = (x, y) => x.iso === y.iso && x.start < y.end && x.end > y.start;
+  const room = c => !picked.includes(c) && !picked.some(p => overlaps(p, c)) && !kept.some(k => overlaps(k, c));
+  // up to three plans that don't overlap in time, different activities first
+  for (const c of cands) { if (picked.length >= 3) break; if (room(c) && !picked.some(p => p.kw === c.kw)) picked.push(c); }
+  for (const c of cands) { if (picked.length >= 3) break; if (room(c)) picked.push(c); }
+  const fresh = {};
+  for (const c of picked) {
+    const info = kwInfo(c.kw);
+    const meal = c.cat === 'Food' ? (c.start >= 690 && c.start < 840 ? 'Lunch' : c.start >= 1050 && c.start < 1230 ? 'Dinner' : '') : '';
+    fresh[c.key] = {key:c.key, iso:c.iso, di:c.di, start:c.start, end:c.end, t:c.t, cat:c.cat, kw:c.kw, max:c.max, userMin:c.userMin, members:c.members,
+      status:'new', confirms:{}, meet: info.meet || CAT_MEET[c.cat], dest: info.dest || CAT_DEST[c.cat],
+      ctx: c.after ? `Right after ${c.after}` : meal ? `${meal} break` : ''};
+  }
+  S.recs = {...fresh, ...keep};
+}
+const recList = () => Object.values(S.recs).sort((x, y) => x.t - y.t);
+
+const inviteOf = r => `${kwInfo(r.kw).label} at ${fmtT(r.start)}, meet at ${(PLACES[r.meet] || PLACES.kimmel).tag}?`;
+/* ---------- toasts & push ---------- */
+let toastT;
+function toast(msg){ const el = $('#toast'); el.textContent = msg; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => el.hidden = true, 2600); }
+let bannerT;
+function push(rec, title){
+  if (!rec) return;
+  S.pushed.push(rec.key);
+  if (!S.notifOn) return;
+  const el = $('#banner');
+  el.innerHTML = `<div class="banner-in">
+    <div class="b-app"><i class="appicon" aria-hidden="true" style="background-image:url(${MASCOT})"></i>Nado · now</div>
+    <div class="b-title">${esc(title || 'New match for you')}</div>
+    <div>${esc(inviteOf(rec))}</div>
+    <div class="small">${rec.ctx ? `<b>${esc(rec.ctx)}</b> · ` : ''}<span class="mono">${fmtRange(rec.start, rec.end)}</span> · ${esc(rec.kw)} · ${rec.members.length+1} people · ${esc(whenLabel(rec).split(' · ')[1])}</div>
+    <div class="b-actions"><button class="btn nado" data-act="nado" data-key="${esc(rec.key)}">Nado!</button><button class="btn ghost sm" data-act="banner-open" data-key="${esc(rec.key)}">Details</button><button class="btn ghost sm" data-act="banner-close">Later</button></div>
+  </div>`;
+  el.hidden = false; el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
+  clearTimeout(bannerT); bannerT = setTimeout(() => el.hidden = true, 7000);
+}
+const hideBanner = () => { $('#banner').hidden = true; };
+function pushNext(title){
+  const r = recList().find(r => r.status === 'new' && !S.pushed.includes(r.key));
+  if (r) push(r, title); return r;
+}
+
+/* ---------- icons ---------- */
+const I = {
+  pin:'<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 1.5a4.5 4.5 0 0 0-4.5 4.5c0 3.2 4.5 8.5 4.5 8.5s4.5-5.3 4.5-8.5A4.5 4.5 0 0 0 8 1.5Zm0 6.2a1.7 1.7 0 1 1 0-3.4 1.7 1.7 0 0 1 0 3.4Z"/></svg>',
+  bell:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15L6 16Z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg>',
+  group:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="3.2"/><circle cx="17" cy="10" r="2.5"/><path d="M3.5 19c.6-3 2.8-4.6 5.5-4.6s4.9 1.6 5.5 4.6"/><path d="M15 15.2c2.6-.4 4.8.8 5.5 3.8"/></svg>',
+  me:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2.5"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>',
+  up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 14l3-3 2 2 3-3 3 3"/><circle cx="8.5" cy="8.5" r="1.3"/></svg>',
+  mail:'<svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 6.5l8.5 6.5 8.5-6.5"/></svg>',
+  home:'<svg class="home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5"/><path d="M6.5 10v9h11v-9"/><path d="M10 19v-5h4v5"/></svg>',
+  back:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>',
+};
+
+/* ---------- pieces ---------- */
+function gridHTML(editable){
+  const n = now(), today = dayIdx(n), curH = n.getHours(), conf = {};
+  const monday = new Date(n.getFullYear(), n.getMonth(), n.getDate() - today);
+  for (const k of S.confirmed) { const [ds, cs, ce] = keyRange(k); const [y,m,d] = ds.split('-').map(Number); for (let h = Math.floor(cs / 60); h < Math.ceil(ce / 60); h++) conf[dayIdx(new Date(y,m-1,d)) + '-' + h] = true; }
+  let h = `<div class="grid${editable ? ' editable' : ''}" aria-label="Weekly schedule, today and the current hour highlighted"><div></div>`;
+  DAYS.forEach((d,i) => { const dt = new Date(monday); dt.setDate(monday.getDate() + i); h += `<div class="hd${i === today ? ' today' : ''}"><span>${d}<small>${dt.getMonth() + 1}/${dt.getDate()}</small></span></div>`; });
+  for (let r = 0; r < NH; r++) {
+    const isNowRow = H0 + r === curH;
+    h += `<div class="tm${isNowRow ? ' now' : ''}">${gridHour(H0 + r)}</div>`;
+    for (let d = 0; d < 7; d++) {
+      const v = conf[d + '-' + (H0 + r)] ? 'confirmed' : S.grid[d][r];
+      const x = (d === today ? ' td' : '') + (d === today && isNowRow ? ' nowc' : '');
+      h += `<div class="cell${x}${v ? ' c-' + v : ''}" data-x="${x}" data-d="${d}" data-h="${r}"${x.includes('nowc') ? ` style="--nowpos:${Math.round(n.getMinutes() / 60 * 100)}%" title="Now"` : ''}></div>`;
+    }
+  }
+  return h + '</div>';
+}
+const legendHTML = () => `<div class="legend"><span><i class="cell nowc" style="--nowpos:50%"></i>Now · ${esc(fmtT(now().getHours() * 60 + now().getMinutes()))}</span><span><i class="cell c-class"></i>Class</span><span><i class="cell c-fixed"></i>Fixed commitment</span><span><i class="cell c-never"></i>Never free</span><span><i class="cell c-confirmed"></i>Confirmed plan</span></div>`;
+function modeHTML(){
+  const m = S.mode;
+  return `<div class="seg" role="group" aria-label="Paint tool">
+    <button data-act="mode" data-mode="never" class="${m==='never'?'on':''}"><i class="sw c-never"></i>Never free</button>
+    <button data-act="mode" data-mode="fixed" class="${m==='fixed'?'on':''}"><i class="sw c-fixed"></i>Fixed</button>
+    <button data-act="mode" data-mode="erase" class="${m==='erase'?'on':''}">Erase</button></div>`;
+}
+function parseHTML(){
+  const p = S.parse;
+  let status = '';
+  if (p.state === 'reading') status = `<div class="aibox"><span class="spinner" style="color:var(--accent)"></span><div>Claude is reading your schedule screenshot…</div></div>`;
+  else if (p.state === 'done') status = `<div class="aibox"><span class="ai">${p.src === 'ai' ? 'AI' : 'DEMO'}</span><div>${p.src === 'ai' ? `Found ${S.classes.length} class meetings and filled them in. Fix anything else below.` : `Loaded the demo schedule (${S.classes.length} class meetings).`}</div></div>`;
+  else if (p.state === 'error') status = `<p class="err">${esc(p.msg)}</p>`;
+  const list = S.classes.length ? `<div class="classlist">${S.classes.map(c => `<div><b>${esc(c.course)}</b><span class="mono muted">${esc(c.day)} ${esc(c.start)}–${esc(c.end)}</span></div>`).join('')}</div>` : '';
+  return `<label class="upload" for="albert">${I.up}<div><h3>Upload your Albert schedule</h3><p class="small muted">A screenshot of your class schedule. Claude reads it; we never ask for your Albert login.</p></div>
+      <input type="file" id="albert" accept="image/png,image/jpeg,image/webp" aria-label="Albert schedule screenshot"></label>
+    ${status}`;
+}
+function tastesHTML(){
+  const full = S.tastes.length >= MAX_INT, cat = S.catTab || CATS[0];
+  const tabs = `<div class="cattabs" role="tablist" aria-label="Interest categories">${CATS.map(c => `<button role="tab" data-act="cattab" data-cat="${c}" class="${c === cat ? 'on' : ''}" aria-selected="${c === cat}">${c}${S.tastes.some(t => catOf(t.kw) === c) ? '<i aria-label="has a pick"></i>' : ''}</button>`).join('')}</div>`;
+  const ks = Object.keys(KW).filter(k => KW[k].cat === cat);
+  const chips = ks.length ? `<div class="chips">${ks.map(k => {
+      const t = S.tastes.find(t => t.kw === k);
+      return `<button class="chip${t ? ' on' : ''}${!t && full ? ' off' : ''}" data-act="kw" data-kw="${esc(k)}">${esc(k)}${t ? `<small>min ${t.min}</small>` : ''}</button>`;
+    }).join('')}</div>`
+    : `<p class="small muted">${cat === 'Place' ? 'Places you like to hang out, like Washington Square Park or the High Line. Add one below.' : 'Nothing here yet. Add one below.'}</p>`;
+  const c = S.custom;
+  return `${tabs}${chips}
+    <form class="stack addown" id="customForm" autocomplete="off">
+      <label class="eyebrow" for="customKw">Add your own</label>
+      <p class="small muted" style="margin-top:-4px">An activity or a place. Claude sorts it into a category.</p>
+      <div class="row" style="flex-wrap:nowrap"><input class="input" id="customKw" placeholder="e.g. badminton, Washington Square Park" maxlength="40">
+      <button class="btn sm" type="submit" ${c.state === 'busy' || full ? 'disabled' : ''}>${c.state === 'busy' ? '<span class="spinner"></span>' : 'Add'}</button></div>
+      ${c.state === 'busy' ? `<div class="aibox"><span class="spinner" style="color:var(--accent)"></span><div>Claude is thinking about <b>${esc(c.name)}</b>: what it is, how many strangers it really works for, and where to meet on campus.</div></div>`
+        : c.msg ? `<p class="small ${c.state === 'error' ? 'err' : 'muted'}">${esc(c.msg)}</p>` : ''}
+    </form>`;
+}
+// Same checks as the app: English only, no offensive words, no links, no keyboard mashing
+function checkName(raw){
+  const name = raw.trim().replace(/\s+/g, ' ');
+  if (!name) return {err:'Type an activity or a place.'};
+  if (name.length > 40) return {err:'Keep it under 40 characters.'};
+  if (/(https?:\/\/|www\.|\.(com|net|org|io|gg|ly)\b|@)/i.test(name)) return {err:'Links can’t be interests. Try the activity or place name.'};
+  const allowed = /^[A-Za-z0-9À-ÖØ-öø-ÿ '&.,+\-/#!?()]+$/, letter = /[A-Za-zÀ-ÖØ-öø-ÿ]/;
+  if (allowed.test(name) && !letter.test(name)) return {err:'Type an activity or a place.'};
+  if (!allowed.test(name)) return {err:'For now, please type it in English so other students can find it too.'};
+  const plain = name.toLowerCase().replace(/0/g,'o').replace(/1|!/g,'i').replace(/3/g,'e').replace(/4|@/g,'a').replace(/5|\$/g,'s').replace(/7/g,'t');
+  const bad = ['ass','asshole','bastard','bitch','cock','cocaine','cum','cunt','dick','drugs','escort','fag','heroin','hitler','hooker','hookup','horny','kkk','kill','lsd','mdma','meth','nazi','nude','nudes','onlyfans','orgy','porn','pussy','rape','retard','sex','sexy','shit','slut','stripper','suicide','tits','weed','whore'];
+  const parts = ['fuck','nigg','faggot','motherf','stripclub'];
+  if (plain.split(/[^a-z]+/).some(w => bad.includes(w)) || parts.some(p => plain.replace(/[^a-z]/g,'').includes(p))) return {err:'Let’s keep interests friendly for everyone. Try a different one.'};
+  const letters = name.toLowerCase().replace(/[^a-zà-ÿ]/g, '');
+  const mash = /(.)\1{3,}/.test(letters) || name.toLowerCase().split(/[^a-zà-ÿ]+/).some(w => w.length >= 5 && !/[aeiouyà-ÿ]/.test(w));
+  if (mash) return {err:'Hmm, we couldn’t read that one. Mind checking the spelling?'};
+  return {name};
+}
+function mapSVG(meetKey, destKey){
+  const P = PLACES, m = P[meetKey] || P.kimmel, d = P[destKey] || m, same = meetKey === destKey;
+  const others = Object.entries(P).filter(([k]) => k !== meetKey && k !== destKey).map(([k,p]) => {
+    const right = p.side !== 'l';
+    return `<circle cx="${p.x}" cy="${p.y}" r="3" fill="${p.campus ? 'var(--accent)' : 'var(--muted)'}" opacity=".55"/><text x="${right ? p.x+6 : p.x-6}" y="${p.y+3.5}" font-size="8" fill="var(--muted)" text-anchor="${right ? 'start' : 'end'}">${esc(p.tag)}</text>`;
+  }).join('');
+  const lw = Math.min(190, m.name.length * 5.6 + 22), lx = Math.max(6, Math.min(354 - lw, m.x - lw/2)), ly = Math.max(4, m.y - 52);
+  const destMark = same ? '' : `<path d="M${m.x} ${m.y}L${d.x} ${d.y}" stroke="var(--accent)" stroke-width="2" stroke-dasharray="4 4" fill="none"/>
+    <circle cx="${d.x}" cy="${d.y}" r="7" fill="var(--card)" stroke="var(--accent)" stroke-width="3"/>
+    <text x="${d.side !== 'l' ? d.x+11 : d.x-11}" y="${d.y+3.5}" font-size="9" font-weight="600" fill="var(--ink)" text-anchor="${d.side !== 'l' ? 'start' : 'end'}">${esc(d.tag)}</text>`;
+  return `<svg class="map" viewBox="0 0 360 262" role="img" aria-label="Sketch map of Washington Square. Meet at ${esc(m.name)}${same ? '' : ', then walk to ' + esc(d.name)}">
+    <rect width="360" height="262" fill="var(--map-bg)"/>
+    <g stroke="var(--map-street)" stroke-width="9" stroke-linecap="square">
+      <path d="M0 24H360M0 60H360M0 190H360M0 222H360"/>
+      <path d="M96 0V262M168 0V62M240 0V262M156 190V262M296 0V262M336 0V262"/>
+    </g>
+    <rect x="104" y="68" width="128" height="114" rx="4" fill="var(--map-park)"/>
+    <path d="M108 72L228 178M228 72L108 178M168 72V178M108 126H228" stroke="var(--map-path)" stroke-width="3" fill="none"/>
+    <circle cx="168" cy="126" r="11" fill="var(--map-path)"/>
+    <rect x="161" y="64" width="14" height="10" rx="2" fill="var(--map-bldg)"/>
+    <g fill="var(--map-campus)"><rect x="164" y="196" width="40" height="18" rx="2"/><rect x="208" y="196" width="28" height="18" rx="2"/><rect x="246" y="96" width="44" height="32" rx="2"/><rect x="280" y="226" width="44" height="22" rx="2"/></g>
+    <g font-size="7.5" fill="var(--muted)" font-family="IBM Plex Mono, monospace">
+      <text x="4" y="20">W 8th St</text><text x="4" y="56">Waverly Pl</text><text x="4" y="186">W 4th St</text><text x="4" y="218">W 3rd St</text>
+      <text x="171" y="10">5th Ave</text><text x="243" y="10">University Pl</text><text x="300" y="160">Mercer</text>
+    </g>
+    ${others}${destMark}
+    <path d="M${m.x} ${m.y}c-6-9-10-13-10-18a10 10 0 1 1 20 0c0 5-4 9-10 18z" fill="var(--accent)"/>
+    <circle cx="${m.x}" cy="${m.y-18}" r="4" fill="var(--card)"/>
+    <rect x="${lx}" y="${ly}" width="${lw}" height="20" rx="10" fill="var(--card)" stroke="var(--accent)"/>
+    <text x="${lx + lw/2}" y="${ly + 13.5}" font-size="9.5" font-weight="600" fill="var(--ink)" text-anchor="middle">Meet: ${esc(m.name)}</text>
+    <text x="356" y="258" font-size="7" fill="var(--muted)" text-anchor="end">Sketch · not to scale · purple = NYU</text>
+  </svg>`;
+}
+const statusPill = r => ({forming:'<span class="pill amber">AI is forming the team</span>', confirm:'<span class="pill amber">Waiting to confirm</span>',
+  room:'<span class="pill good">Room open</span>', dissolved:'<span class="pill bad">Dissolved</span>'}[r.status] || '');
+function recCard(r){
+  const info = kwInfo(r.kw), size = r.members.length + 1, tm = teamMinOf(r), meet = PLACES[r.meet] || PLACES.kimmel;
+  const chan = r.ctx ? `<span class="pill">${esc(r.ctx)}</span>` : '';
+  const action = r.status === 'new' ? `<button class="btn nado" data-act="nado" data-key="${esc(r.key)}">Nado!</button>`
+    : r.status === 'room' ? `<button class="btn sm" data-act="open-room" data-key="${esc(r.key)}">Enter room</button>`
+    : `<button class="btn soft sm" data-act="tab" data-tab="groups">See group</button>`;
+  return `<article class="card rec${S.highlight === r.key ? ' hl' : ''}" id="rec-${esc(r.key)}">
+    <div class="top"><span>${esc(whenLabel(r))}</span><span class="mono time">${fmtRange(r.start, r.end)}</span>${r.status === 'new' ? chan : statusPill(r)}</div>
+    <div class="kw">${esc(r.kw)}<small>${esc(info.label)} · ${esc(r.cat)}</small></div>
+    <p class="invite">${esc(inviteOf(r))}</p>
+    <div class="meta"><span>${size} matched</span><span>min ${tm}</span><span>max ${r.max} (set by AI)</span></div>
+    <div class="foot"><div class="place">${I.pin}<span>Meet at ${esc(meet.name)}</span></div>${action}</div>
+  </article>`;
+}
+function memberChips(r){
+  return `<div class="members"><span class="mem me"><i style="background:var(--accent);color:var(--accent-ink)">Me</i>${esc(S.nick)}</span>${r.members.map(m => { const p = seedById(m.id); return `<span class="mem"><i style="background:${p.color}">${esc(p.nick[0])}</i>${esc(p.nick)}</span>`; }).join('')}</div>`;
+}
+
+/* ---------- screens ---------- */
+function vLogin(){
+  return `<div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:28px;padding:20px 4px">
+    <div class="stack" style="gap:14px"><div class="row" style="gap:10px;flex-wrap:nowrap;align-items:flex-end"><img class="mascot" src="${MASCOT}" alt="" style="width:104px"><div class="wordmark">Nado</div></div>
+      <p style="font-size:18px;font-weight:500;text-wrap:balance">Others ask, “Who’s in?”<br>You say: nado.</p>
+      <p class="muted small">“Nado” means “me too” in Korean. We match NYU students who are free at the same time and like the same things. Only the AI sees your schedule and interests.</p></div>
+    <form id="loginForm" class="stack" style="gap:12px" novalidate>
+      <div class="field"><label for="email">NYU email</label>
+        <input class="input" id="email" type="email" inputmode="email" autocomplete="email" placeholder="netid@nyu.edu" value="${esc(S.email)}"></div>
+      ${S.loginErr ? `<p class="err">${esc(S.loginErr)}</p>` : ''}
+      <button class="btn block" type="submit">Send verification code</button>
+      <p class="small muted">Only @nyu.edu addresses can join.</p>
+    </form></div>`;
+}
+function vVerify(){
+  return `<div class="backbar"><button data-act="to-login">${I.back}Change email</button></div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:22px;padding:8px 4px">
+      <div style="color:var(--accent)">${I.mail}</div>
+      <div class="stack"><h1>Check your NYU inbox</h1>
+        <p class="muted">We sent a 6-digit code to <b style="color:var(--ink)">${esc(S.email)}</b>. Enter it below to verify you’re an NYU student.</p></div>
+      <form id="codeForm" class="stack" style="gap:14px" novalidate>
+        <div class="code${S.codeErr ? ' bad' : ''}" role="group" aria-label="6-digit code">
+          ${[0,1,2,3,4,5].map(i => `<input id="code${i}" inputmode="numeric" autocomplete="${i === 0 ? 'one-time-code' : 'off'}" maxlength="1" aria-label="Digit ${i+1}">`).join('')}
+        </div>
+        ${S.codeErr ? `<p class="err">${esc(S.codeErr)}</p>` : ''}
+        <button class="btn block" type="submit">Verify</button>
+        <p class="small muted">Didn’t get it? <button type="button" class="link" data-act="resend">Resend code</button></p>
+      </form>
+      <div class="aibox" style="background:var(--amber-soft)"><span class="ai" style="background:var(--amber);color:var(--card)">DEMO</span><div>No email is actually sent in this prototype. Type any 6 digits.</div></div>
+    </div>`;
+}
+function vSchedule(){
+  return `<div class="steps"><i class="on"></i><i></i></div>
+    <div class="stack"><span class="eyebrow">Step 1 of 2 · Schedule</span><h1>When are you busy?</h1>
+      <p class="muted small">Classes come from your Albert screenshot. Paint jobs, clubs and other fixed commitments, plus any hours you’re never free.</p></div>
+    ${parseHTML()}
+    <div class="stack">${modeHTML()}${gridHTML(true)}${legendHTML()}</div>
+    <button class="btn block" data-act="to-taste">Next: interests</button>`;
+}
+function vTaste(){
+  return `<div class="steps"><i class="on"></i><i class="on"></i></div>
+    <div class="stack"><span class="eyebrow">Step 2 of 2 · Interests</span><h1>What would you do with others?</h1>
+      <p class="muted small">Pick up to 3. For each one, tell us the smallest group you’d enjoy. The AI sets the largest group size for each activity.</p></div>
+    ${tastesHTML()}
+    <button class="btn block" data-act="start" ${S.tastes.length ? '' : 'disabled'}>Start matching</button>`;
+}
+function vInbox(){
+  const list = recList().filter(r => r.status === 'new');
+  const n = now(), t = esc(fmtT(n.getHours() * 60 + n.getMinutes()));
+  return `<div class="between"><h1>Right now</h1><button type="button" class="pill ${clock.base ? 'amber' : 'plain'} mono clockpill" data-act="clocktap" title="${clock.base ? 'Demo clock' : 'Now'}">${clock.base ? `${DAYS[dayIdx(n)]} ${t}` : t}</button></div>
+    <p class="small muted" style="margin-top:-8px">Plans starting in the next 4 hours, built around when your classes end.</p>
+    <div class="card between"><div><h3 style="font-size:14.5px">Match notifications</h3><p class="small muted">We ping you when a plan fits the next few hours, like the moment a class lets out.</p></div>
+      <label class="toggle"><input type="checkbox" id="notif" ${S.notifOn ? 'checked' : ''} aria-label="Match notifications"><span></span></label></div>
+    <div class="next-check" id="nextcheck" role="status"><span class="live-dot" aria-hidden="true"></span><span class="muted">Checking every minute</span><span class="next-in"><span class="ring" aria-hidden="true"></span><span class="mono">00:--</span></span></div>
+    <div class="section-h"><h2>Next 4 hours</h2><span class="small muted">${list.length} plan${list.length === 1 ? '' : 's'}</span></div>
+    ${list.length ? list.map(recCard).join('') : `<div class="empty"><img class="mascot" src="${MASCOT}" alt="" style="width:64px;margin:0 auto 8px">Nothing fits the next 4 hours.<br>We’ll check again when your next class ends.</div>`}
+    <p class="small muted" style="text-align:center">Plans never overlap in time. You won’t know who’s in the group until you meet.</p>`;
+}
+function vGroups(){
+  const active = recList().filter(r => r.status !== 'new');
+  const cards = active.map(r => {
+    const info = kwInfo(r.kw), size = r.members.length + 1;
+    let body = '';
+    if (r.status === 'forming') body = `<div class="aibox"><span class="spinner" style="color:var(--accent)"></span><div>The AI is forming a team of ${teamMinOf(r)} to ${r.max} people.</div></div>`;
+    if (r.status === 'confirm') {
+      const n = Object.values(r.confirms).filter(Boolean).length + (r.meConfirmed ? 1 : 0);
+      const dlMs = Math.max(r.t - 30*60000, (r.createdAt || now().getTime()) + 15*60000), dl = new Date(Math.min(dlMs, r.t - 5*60000));
+      const dlText = `by ${fmtT(dl.getHours() * 60 + dl.getMinutes())}`;
+      body = `<div class="stack"><div class="between small"><span>${n} of ${size} confirmed</span><span class="muted">Confirm ${esc(dlText)}</span></div>
+        <div class="progress"><i style="width:${n/size*100}%"></i></div>
+        ${r.meConfirmed ? '<p class="small muted">You’re confirmed. Waiting for the others.</p>' : `<button class="btn block" data-act="confirm" data-key="${esc(r.key)}">Confirm and join the room</button>`}</div>`;
+    }
+    if (r.status === 'room') body = `<p class="small muted"><span class="sw c-confirmed"></span> Added to your schedule. Matching skips this hour now.</p><button class="btn block" data-act="open-room" data-key="${esc(r.key)}">Enter room</button>`;
+    return `<article class="card rec"><div class="top"><span>${esc(whenLabel(r))}</span><span class="mono time">${fmtRange(r.start, r.end)}</span>${statusPill(r)}</div>
+      <div class="kw">${esc(r.kw)}<small>${esc(info.label)} · ${size} people</small></div>${body}</article>`;
+  }).join('');
+  const hist = S.history.slice(-3).reverse().map(r => `<article class="card rec" style="opacity:.75"><div class="top"><span>${esc(whenLabel(r))}</span><span class="mono time">${fmtRange(r.start, r.end)}</span><span class="pill bad">Dissolved</span></div>
+    <div class="kw">${esc(r.kw)}<small>fell below the minimum</small></div><p class="small muted">That hour went back into the matching pool.</p></article>`).join('');
+  return `<h1>Groups</h1>
+    ${cards || `<div class="empty"><img class="mascot" src="${MASCOT}" alt="" style="width:72px;margin:0 auto 8px">You haven’t joined a group yet.<br>Tap <b>Nado!</b> on a match and it shows up here.</div>`}
+    ${hist ? `<div class="section-h"><h2>Past month</h2></div>${hist}` : ''}`;
+}
+function slotsHTML(){
+  const filled = S.tastes.map(t => `<button class="slot filled" data-act="kw" data-kw="${esc(t.kw)}"><b>${esc(kwInfo(t.kw).label)}</b><small>min ${t.min}</small></button>`);
+  const empty = Array.from({length: Math.max(0, MAX_INT - S.tastes.length)}, () => '<button class="slot" data-act="to-browse" aria-label="Empty slot. Pick an interest below"><span aria-hidden="true">+</span><small>Empty</small></button>');
+  return filled.concat(empty).join('');
+}
+function vMe(){
+  return `<div class="between"><h1>Profile</h1><span class="pill plain">Visible to the AI only</span></div>
+    <div class="card row" style="gap:12px;flex-wrap:nowrap"><img class="mascot" src="${MASCOT}" alt="" style="width:48px;flex:none">
+      <div style="min-width:0"><h3>${esc(S.nick)}</h3><p class="small muted mono" style="overflow:hidden;text-overflow:ellipsis">${esc(S.email)}</p></div></div>
+    <div class="section-h"><h2>My interests</h2><span class="pill plain mono">${S.tastes.length} / ${MAX_INT}</span></div>
+    <div class="card stack" style="gap:10px"><div class="slots">${slotsHTML()}</div>
+      ${S.tastes.length ? '' : `<p class="small muted">Pick up to ${MAX_INT} things you’d do with other students.</p>`}</div>
+    <div class="section-h" id="browse" style="scroll-margin-top:12px"><h2>Browse interests</h2><span class="small muted">${S.tastes.length >= MAX_INT ? `${MAX_INT} of ${MAX_INT} picked` : 'Tap to add'}</span></div>
+    <div class="card stack" style="gap:12px">${tastesHTML()}</div>
+    <div class="section-h"><h2>My availability</h2><span class="small muted">Changes re-run matching</span></div>
+    <p class="small muted" style="margin-top:-10px">Classes come from Albert. Paint other commitments and hours you’re never free; everything else counts as free.</p>
+    ${parseHTML()}
+    ${modeHTML()}${gridHTML(true)}${legendHTML()}
+    ${S.tastes.length ? '<button class="btn block" data-act="tab" data-tab="inbox">See my matches</button>' : ''}
+    <p class="small muted" style="text-align:center">Other students only see your nickname. Your schedule and interests stay private.</p>`;
+}
+const PLACE_STEPS = [
+  'Looking at NYU buildings around Washington Square',
+  'Checking which spots fit this activity and group size',
+  'Preferring indoor, easy-to-find meeting points',
+  'Estimating the walk to where the activity happens',
+];
+function placeThinkingHTML(r){
+  const st = (r.place && r.place.step) || 0;
+  return `<div class="aibox"><span class="spinner" style="color:var(--accent)"></span><div class="stack" style="gap:6px"><b>Finding the best spot on campus…</b>
+    ${PLACE_STEPS.map((t, i) => `<div class="small" style="opacity:${i <= st ? 1 : .35}">${i < st ? '✓' : i === st ? '•' : '·'} ${esc(t)}</div>`).join('')}</div></div>`;
+}
+const walkMin = (a, b) => Math.max(1, Math.round(Math.hypot(a.x - b.x, a.y - b.y) / 30));
+function placeFallbackReason(r){
+  const m = PLACES[r.meet] || PLACES.kimmel, d = PLACES[r.dest] || m, n = r.members.length + 1;
+  return r.meet === r.dest
+    ? `${m.name} is indoors, easy to find, and has room for ${n} people doing ${kwInfo(r.kw).label.toLowerCase()}, so you can meet and start in the same place.`
+    : `${m.name} is an indoor spot all ${n} of you can find easily, and ${d.name} is about a ${walkMin(m, d)}-minute walk from there.`;
+}
+async function choosePlace(r){
+  if (r.place) return;
+  r.place = {state:'thinking', step:0};
+  const tick = setInterval(() => { if (r.place.state !== 'thinking') return clearInterval(tick); r.place.step = Math.min(PLACE_STEPS.length - 1, r.place.step + 1); render(); }, 550);
+  timers.push(tick);
+  const minWait = new Promise(res => setTimeout(res, 2300));
+  let reason = null;
+  await sampleReady;
+  if (SAMPLE) {
+    const m = PLACES[r.meet] || PLACES.kimmel, d = PLACES[r.dest] || m;
+    try {
+      const {text} = await SAMPLE(`You pick meeting spots for Nado, an app that groups NYU students who are strangers. ` +
+        `${r.members.length + 1} students are doing "${kwInfo(r.kw).label}" from ${fmtRange(r.start, r.end)}. ` +
+        `They first meet at ${m.name} (${m.addr})${r.meet === r.dest ? ', where the activity also happens' : `, then walk about ${walkMin(m, d)} minutes to ${d.name} (${d.addr})`}. ` +
+        `In one or two short sentences addressed to the group, explain why this plan works. Plain English, no quotes, no emojis.`, {modelTier:'quick'});
+      reason = text.trim().slice(0, 300);
+    } catch (e) { /* fall back to the rule-based explanation */ }
+  }
+  await minWait;
+  r.place = {state:'done', reason: reason || placeFallbackReason(r), byAI: !!reason};
+  clearInterval(tick); render();
+}
+function vRoom(){
+  const r = S.recs[S.view.key]; if (!r) return vGroups();
+  const info = kwInfo(r.kw), m = PLACES[r.meet] || PLACES.kimmel, d = PLACES[r.dest] || m, size = r.members.length + 1, tm = teamMinOf(r), same = r.meet === r.dest;
+  return `<div class="backbar"><button data-act="back">${I.back}Groups</button></div>
+    <div class="stack" style="gap:6px"><div class="row"><span class="pill good">Confirmed</span><span class="small muted">${esc(whenLabel(r))} · <span class="mono">${fmtRange(r.start, r.end)}</span></span></div>
+      <h1>${esc(r.kw)} <span class="muted" style="font-size:18px;font-weight:600">${esc(info.label)}</span></h1>
+      <p class="small muted">${size} people · min ${tm} · max ${r.max} (set by AI)</p>
+      <p class="small row" style="gap:6px"><span class="sw c-confirmed"></span>On your schedule · no other matches for this hour <button class="link" data-act="tab" data-tab="me">See schedule</button></p></div>
+    <div class="card stack" style="gap:12px"><div class="between"><h3>Where to meet</h3><span class="pill">On campus · AI pick</span></div>
+      ${r.place && r.place.state === 'done' ? '' : placeThinkingHTML(r)}
+      ${r.place && r.place.state === 'done' ? `${mapSVG(r.meet, r.dest)}
+      <div class="aibox"><span class="ai">${r.place.byAI ? 'CLAUDE' : 'AI'}</span><div>${esc(r.place.reason)}</div></div>
+      <div class="route"><span class="dotm"></span><div><b>${esc(m.name)}</b><div class="small muted">${esc(m.addr)} · find each other here</div></div>
+      ${same ? '' : `<span class="line"></span><span></span><span class="doto"></span><div><b>${esc(d.name)}</b><div class="small muted">${esc(d.addr)} · ${d.far ? 'a longer walk, head there together' : 'walk over together'}</div>${d.ai ? `<div class="small" style="color:var(--amber)">Suggested by Claude${d.sure ? '' : ' as a general spot'} · check it’s open before you go</div>` : ''}</div>`}</div>
+      <p class="small muted">AI finds the best compatible spot within the campus for this group and activity: indoors, easy to find, and covered by campus security.</p>` : ''}</div>
+    <div class="card stack" style="gap:10px"><h3>Group</h3>${memberChips(r)}<p class="small muted">Nobody can see anyone’s profile. When you meet, the AI gives you hints to find each other.</p></div>
+    <button class="btn block" data-act="pre-meet" data-key="${esc(r.key)}">Share your outfit</button>
+    <button class="btn ghost sm" data-act="leave" data-key="${esc(r.key)}">I can’t make it</button>`;
+}
+function vGame(){
+  const g = S.game, r = S.recs[g.key];
+  if (!r) { S.game = null; S.view = null; return vGroups(); }
+  const info = kwInfo(r.kw), place = (PLACES[r.meet] || PLACES.kimmel).name;
+  if (g.phase === 'outfit') {
+    const o = g.outfit;
+    const opt = (k, arr) => arr.map(v => `<button class="chip${o[k] === v ? ' on' : ''}" data-act="outfit" data-k="${k}" data-v="${esc(v)}">${esc(v)}</button>`).join('');
+    return `<div class="backbar"><button data-act="back">${I.back}Room</button></div>
+      <div class="aibox"><span class="ai">AI</span><div>${esc(info.label)} ${esc(whenLabel(r).split(' · ')[1])} at <b>${esc(place)}</b>. What are you wearing today? Your group only sees this as hints, and it’s deleted after you meet.</div></div>
+      <div class="stack"><span class="eyebrow">Top color</span><div class="optgrid">${COLORS.map(([n,c]) => `<button class="swatch${o.color === n ? ' on' : ''}" style="background:${c}" data-act="outfit" data-k="color" data-v="${n}" aria-label="${n}" title="${n}"></button>`).join('')}</div></div>
+      <div class="stack"><span class="eyebrow">Top</span><div class="chips">${opt('top', TOPS)}</div></div>
+      <div class="stack"><span class="eyebrow">Shoes</span><div class="chips">${opt('shoes', SHOES)}</div></div>
+      <div class="stack"><span class="eyebrow">Hair / accessory</span><div class="chips">${opt('hair', HAIR)}</div></div>
+      <button class="btn block" data-act="send-outfit" ${o.color && o.top && o.shoes && o.hair ? '' : 'disabled'}>Send to AI and head out</button>`;
+  }
+  if (g.phase === 'hunt') {
+    const t = g.targets[g.idx], p = seedById(t.id), o = p.outfit;
+    const hints = [['Top', `${o.color} ${o.top}`], ['Shoes', o.shoes], ['Hair', o.hair]];
+    return `<div class="backbar"><button data-act="back">${I.back}Room</button></div>
+      <div class="stack" style="gap:4px"><span class="eyebrow">Find your group · ${esc(place)}</span>
+      <div class="targets">${g.targets.map((x,i) => { const s = seedById(x.id); return `<span class="pill ${x.found ? 'good' : i === g.idx ? '' : 'plain'}">${x.found ? 'Found · ' : ''}${esc(s.nick)}</span>`; }).join('')}</div></div>
+      <div class="card stack" style="gap:12px"><div class="aibox"><span class="ai">AI</span><div><b>${esc(p.nick)}</b> is nearby. Look for someone in:</div></div>
+        <p class="hint">${esc(hints[0][1])}</p>
+        <div class="hintlist">${hints.map(([k,v],i) => i <= t.hint ? `<div><span class="n">HINT ${i+1}</span><span>${esc(k)}: ${esc(v)}</span></div>` : `<div class="locked"><span class="n">HINT ${i+1}</span><span>Tap “Not sure” to unlock</span></div>`).join('')}</div></div>
+      <div class="row" style="flex-wrap:nowrap"><button class="btn block" data-act="found">Found them</button><button class="btn ghost block" data-act="dunno">Not sure</button></div>
+      ${g.dunno >= 2 ? `<button class="btn block" style="background:var(--glow);color:var(--glow-ink)" data-act="giveup">I give up · make my screen glow</button>
+        <p class="small muted" style="text-align:center">Your phone lights up bright yellow so your group can find you instead.</p>` : ''}`;
+  }
+  return `<div class="backbar"><button data-act="back">${I.back}Room</button></div>
+    <div class="stack" style="gap:8px;text-align:center;align-items:center;padding:8px 0"><img class="mascot" src="${MASCOT}" alt="" style="width:120px"><div class="wordmark" style="font-size:52px">Found!</div><p class="muted">All ${r.members.length + 1} of you made it for ${esc(info.label.toLowerCase())}.</p></div>
+    ${memberChips(r)}
+    <div class="card stack" style="gap:10px"><div class="between"><h3>Icebreaker</h3><span class="pill">AI</span></div>
+      <p class="hint" style="font-size:21px">${esc(g.question)}</p>
+      <button class="btn soft sm" data-act="new-q" ${g.qBusy ? 'disabled' : ''}>${g.qBusy ? '<span class="spinner"></span> Thinking' : 'Another question'}</button></div>
+    <div class="stack" style="gap:6px;align-items:center;margin-top:4px"><button class="btn block" data-act="home">${I.home}Back to home</button>
+      <p class="small muted">Have fun! We’ll keep an eye out for your next plan.</p></div>`;
+}
+
+/* ---------- render ---------- */
+const viewKey = () => S.step + '|' + S.tab + '|' + (S.view ? S.view.type + S.view.key : '') + '|' + (S.game ? S.game.phase : '');
+function render(){
+  const scr = $('#screen'), keepScroll = scr.dataset.v === viewKey() ? scr.scrollTop : 0;
+  let html;
+  if (S.step === 'login') html = vLogin();
+  else if (S.step === 'verify') html = vVerify();
+  else if (S.step === 'schedule') html = vSchedule();
+  else if (S.step === 'taste') html = vTaste();
+  else if (S.view && S.view.type === 'game' && S.game) html = vGame();
+  else if (S.view && S.view.type === 'room') html = vRoom();
+  else html = S.tab === 'inbox' ? vInbox() : S.tab === 'groups' ? vGroups() : vMe();
+  scr.innerHTML = html;
+  scr.dataset.v = viewKey();
+  scr.scrollTop = keepScroll;
+  const tb = $('#tabbar');
+  tb.hidden = !(S.step === 'app' && !S.view);
+  if (!tb.hidden) {
+    const nNew = recList().filter(r => r.status === 'new').length;
+    const nGrp = recList().filter(r => r.status === 'confirm' && !r.meConfirmed).length;
+    tb.innerHTML = [['me','Profile',I.me,0],['inbox','Matches',I.bell,nNew],['groups','Groups',I.group,nGrp]].map(([k,l,ic,n]) =>
+      `<button data-act="tab" data-tab="${k}" class="${S.tab === k ? 'on' : ''}" aria-current="${S.tab === k}">${ic}${l}${n ? `<span class="dot">${n}</span>` : ''}</button>`).join('');
+  }
+  const sh = $('#sheet');
+  if (S.sheet) {
+    const info = kwInfo(S.sheet.kw), exists = S.tastes.some(t => t.kw === S.sheet.kw);
+    sh.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="Minimum group size">
+      <div class="stack" style="gap:4px"><span class="eyebrow">${esc(info.cat)}</span><h2>What’s the smallest group you’d enjoy for ${esc(info.name || S.sheet.kw)}?</h2></div>
+      <div class="stepper"><button data-act="min-dec" aria-label="One fewer">−</button><output class="mono" aria-live="polite">${S.sheet.min}</output><button data-act="min-inc" aria-label="One more">+</button></div>
+      <div class="aibox"><span class="ai">${info.byAI ? 'CLAUDE' : 'AI'}</span><div class="stack" style="gap:4px">
+        <div>Up to <b>${info.max} people</b> for ${esc(info.label)}.${info.reason ? ' ' + esc(info.reason) : ''}</div>
+        ${info.byAI ? `<div class="small muted">Meet at ${esc(PLACES[info.meet].name)}${info.dest !== info.meet ? `, then ${esc(PLACES[info.dest].name)} (${esc(PLACES[info.dest].addr)})` : ''}</div>` : ''}
+        <div class="small muted">If fewer than your minimum are free, we won’t form a team.</div>
+        ${S.sheet.custom && SAMPLE ? '<div><button class="link" data-act="rethink">Ask Claude to rethink</button></div>' : ''}</div></div>
+      <div class="row" style="flex-wrap:nowrap">${exists ? '<button class="btn ghost block" data-act="sheet-remove">Remove interest</button>' : '<button class="btn ghost block" data-act="sheet-close">Cancel</button>'}<button class="btn block" data-act="sheet-save">Save</button></div></div>`;
+    sh.hidden = false;
+  } else if (S.clockSheet) {
+    const n = now(), pad = x => String(x).padStart(2, '0');
+    const d = `${n.getFullYear()}-${pad(n.getMonth() + 1)}-${pad(n.getDate())}`, t = `${pad(n.getHours())}:${pad(n.getMinutes())}`;
+    sh.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="Demo clock">
+      <div class="stack" style="gap:4px"><span class="eyebrow">Secret demo clock</span><h2>Jump to any moment</h2>
+        <p class="small muted">${clock.base ? 'Following the demo clock.' : 'Following real time.'}</p></div>
+      <div class="chips">${CLOCKS.filter(c => c.id !== 'real').map(c => `<button class="chip" data-act="clock-preset" data-id="${c.id}">${esc(c.label.split(' · ')[0])}</button>`).join('')}</div>
+      <div class="row" style="flex-wrap:nowrap"><div class="field" style="flex:1.4"><label for="ckdate">Date</label><input id="ckdate" class="input" type="date" value="${d}"></div>
+        <div class="field" style="flex:1"><label for="cktime">Time</label><input id="cktime" class="input" type="time" value="${t}"></div></div>
+      <div class="row" style="flex-wrap:nowrap"><button class="btn ghost block" data-act="clock-real">Real time</button><button class="btn block" data-act="clock-set">Set clock</button></div></div>`;
+    sh.hidden = false;
+  } else sh.hidden = true;
+  const gl = $('#glow');
+  if (S.game && S.game.phase === 'glow') {
+    gl.innerHTML = `<div class="big">I’m here!</div><div class="nick">${esc(S.nick)}</div>
+      <p>Your group is looking for this screen.<br>Hold your phone up high.</p>
+      ${S.game.foundBy ? `<div class="found">${esc(S.game.foundBy)} found you!</div><button class="btn" data-act="glow-done">We met</button>` : ''}`;
+    gl.hidden = false;
+  } else gl.hidden = true;
+  renderGuide();
+  if (S.step === 'verify') { const c0 = $('#code0'); if (c0 && document.activeElement?.closest?.('.code') == null) c0.focus({preventScroll:true}); }
+}
+
+/* ---------- guide ---------- */
+function renderGuide(){
+  const g = $('#guide'); if (!g) return;
+  const any = v => S.grid.some(r => r.includes(v));
+  const steps = [
+    ['Sign up with an @nyu.edu email', 'Then enter the 6-digit code', S.step !== 'login' && S.step !== 'verify'],
+    ['Albert screenshot fills the schedule', 'Demo schedule button as backup', any('class')],
+    ['Paint never-free hours', 'Drag across cells', any('never')],
+    ['Pick up to 3 interests + minimum group size', 'AI sets the maximum', S.tastes.length > 0 && S.step === 'app'],
+    ['Push → Nado! → confirm → room', 'Plans for the next 4 hours only', S.flags.room],
+    ['Campus meet point on the map', 'AI finds the best compatible location within the campus (Claude API in the full app)', S.flags.map],
+    ['Share your outfit → give up → screen glows', 'Hints unlock one by one', S.flags.glow],
+    ['Found! → Claude asks the first question', 'Then Back to home', S.flags.found],
+  ];
+  const nowIdx = steps.findIndex(s => !s[2]);
+  const ai = SAMPLE ? 'Claude connected: schedule reading, custom interests and icebreakers use the real AI.' : 'Claude not connected: AI steps fall back to samples and defaults.';
+  g.innerHTML = `<div class="stack" style="gap:4px"><span class="eyebrow">Hackathon demo guide</span><h2>3-minute walkthrough</h2></div>
+    <ol>${steps.map((s,i) => `<li class="${s[2] ? 'done' : i === nowIdx ? 'now' : ''}"><span class="ck">${s[2] ? '✓' : i+1}</span><span>${esc(s[0])}<small>${esc(s[1])}</small></span></li>`).join('')}</ol>
+    <div class="field"><label for="democlock" class="eyebrow">Demo clock</label>
+      <select id="democlock" class="input" style="padding:9px 12px">${CLOCKS.map(c => `<option value="${c.id}" ${clock.id === c.id ? 'selected' : ''}>${esc(c.label)}</option>`).join('')}</select></div>
+    <div class="row"><button class="btn sm" data-act="quick">Quick setup (steps 1–4)</button><button class="btn ghost sm" data-act="reset">Start over</button></div>
+    <p class="ai-state">${esc(ai)} The matching pool is ${SEEDS.length} sample students.</p>
+    <p class="ai-state">Tip: tap the clock on Right now 5 times to jump to any time.</p>`;
+}
+
+/* ---------- actions ---------- */
+function applyClasses(list){
+  for (const row of S.grid) for (let i = 0; i < NH; i++) if (row[i] === 'class') row[i] = null;
+  S.classes = list;
+  for (const c of list) {
+    const d = DAY_EN[c.day]; if (d === undefined) continue;
+    const [sh] = String(c.start).split(':').map(Number), [eh, em] = String(c.end).split(':').map(Number);
+    if (isNaN(sh) || isNaN(eh)) continue;
+    const last = em > 0 ? eh : eh - 1;
+    for (let h = Math.max(H0, sh); h <= Math.min(H1 - 1, last); h++) S.grid[d][h-H0] = 'class';
+  }
+}
+async function readAlbert(file){
+  if (!file) return;
+  S.parse = {state:'reading'}; render();
+  await sampleReady;
+  const lim = SAMPLE ? await SAMPLE.limits().catch(() => null) : null;
+  if (!SAMPLE) { await new Promise(r => setTimeout(r, 2200)); applyClasses(SAMPLE_CLASSES); S.parse = {state:'done', src:'ai'}; render(); profileChanged(); return; }
+  if (!lim || !lim.images) { S.parse = {state:'error', msg:'Claude is connected, but this view can’t send images (some app and phone views can’t). Try claude.ai in a desktop browser, or load the demo schedule to continue.'}; render(); return; }
+  try {
+    const arr = await SAMPLE.json(
+      'This image is a screenshot of an NYU student\'s class schedule from the Albert student system. ' +
+      'List every class meeting. Reply with only a JSON array like ' +
+      '[{"course":"CSCI-UA 102 Data Structures","day":"Mon","start":"09:30","end":"10:45"}]. ' +
+      'day must be one of Mon,Tue,Wed,Thu,Fri,Sat,Sun; times are 24-hour HH:MM. A class that meets on several days gets one entry per day. ' +
+      'If the image is not a class schedule, reply [].', {images:[file]});
+    const ok = Array.isArray(arr) ? arr.filter(c => c && DAY_EN[c.day] !== undefined && /^\d{1,2}:\d{2}$/.test(c.start) && /^\d{1,2}:\d{2}$/.test(c.end)).map(c => ({course:String(c.course || 'Class').slice(0,60), day:c.day, start:c.start, end:c.end})) : [];
+    if (!ok.length) S.parse = {state:'error', msg:'No classes found in that image. Take a screenshot that shows days and times.'};
+    else { applyClasses(ok); S.parse = {state:'done', src:'ai'}; }
+  } catch (e) { S.parse = {state:'error', msg: aiError(e && e.code)}; }
+  render();
+}
+// cross streets on the sketch map, so a place Claude names can be pinned roughly where it is
+const NS_X = {'6th Ave':30, 'MacDougal St':96, 'Thompson St':156, '5th Ave':168, 'University Pl / LaGuardia Pl':240, 'Mercer St':296, 'Broadway':336};
+const EW_Y = {'W 8th St':24, 'Waverly Pl':60, 'W 4th St':190, 'W 3rd St':222, 'Bleecker St':252};
+function placeFromVenue(key, v){
+  let x = (NS_X[v.ns] ?? 168) + 6, y = (EW_Y[v.ew] ?? 222) + 8;
+  const far = ['N','S','E','W'].includes(v.far) ? v.far : '';
+  if (far === 'N') y = 10; if (far === 'S') y = 252; if (far === 'E') x = 344; if (far === 'W') x = 12;
+  x = Math.max(10, Math.min(346, x)); y = Math.max(10, Math.min(252, y));
+  const name = String(v.name || 'Suggested spot').slice(0, 40), tag = name.length > 18 ? name.slice(0, 17) + '…' : name;
+  const id = 'ai_' + key.replace(/[^a-z0-9]+/g, '_');
+  PLACES[id] = {name, tag: far ? `${tag} ${({N:'↑',S:'↓',E:'→',W:'←'})[far]}` : tag,
+    addr: String(v.address || 'near Washington Square').slice(0, 60), campus:false, x, y, side: x < 250 ? 'r' : 'l',
+    ai:true, sure: v.confident !== false, far};
+  return id;
+}
+async function thinkAbout(name){
+  await sampleReady;
+  if (!SAMPLE) return {info:null, err:'none'};
+  const meets = Object.entries(PLACES).filter(([,p]) => p.campus).map(([k,p]) => `${k} = ${p.name}`).join('; ');
+  const known = Object.entries(PLACES).filter(([,p]) => !p.ai).map(([k,p]) => `${k} = ${p.name} (${p.addr})`).join('; ');
+  const prompt = `You help run Nado, an app that puts NYU students who are strangers into small groups when they are free at the same time and share an interest. ` +
+    `A student just added a new interest: "${name}". Think it through carefully before you answer:\n` +
+    `1. What is this activity, and which category fits best: ${CATS.join(', ')}?\n` +
+    `2. What is the largest group of strangers that really works for it? Weigh practical limits: buying seats or tickets together, table size, court or equipment size, cost, noise, and whether a big group of strangers would feel awkward. When unsure, pick the smaller number. Range 2 to 12.\n` +
+    `3. What is a sensible default minimum group size (at least 2, not above the maximum)?\n` +
+    `4. Where should the group first meet on campus? Choose one key: ${meets}.\n` +
+    `5. Where does the activity actually happen? If one of these known places fits well, set "place" to its key: ${known}. ` +
+    `Otherwise set "place" to null and suggest one real venue near NYU's Washington Square campus in "venue": its name, street address, ` +
+    `the nearest north-south street (one of: ${Object.keys(NS_X).join(', ')}) as "ns", and the nearest east-west street (one of: ${Object.keys(EW_Y).join(', ')}) as "ew". ` +
+    `If it is more than about a 10-minute walk from Washington Square Park, set "far" to its compass direction from the park (N, S, E or W), otherwise "". ` +
+    `Only name a specific business you are confident exists; if you are not sure, describe a generic public spot instead (for example "Washington Square Park lawn") and set "confident" to false.\n` +
+    `6. Write a reason of one or two plain sentences, addressed to the student, explaining the group size and the place.\n` +
+    `Reply with only a JSON object like {"label":"Badminton","cat":"Sports","max":4,"min":2,"meet":"paulson","place":null,` +
+    `"venue":{"name":"...","address":"...","ns":"Mercer St","ew":"W 3rd St","far":"","confident":true},"reason":"..."}. The label is at most 4 words.`;
+  try {
+    const v = await SAMPLE.json(prompt, {modelTier:'default', cache:false});
+    if (!v || !CATS.includes(v.cat)) return {info:null, err:'invalid'};
+    const max = Math.max(2, Math.min(12, Math.round(Number(v.max)) || 4));
+    const meet = PLACES[v.meet] && PLACES[v.meet].campus ? v.meet : CAT_MEET[v.cat];
+    let dest = PLACES[v.place] && !PLACES[v.place].ai ? v.place : null;
+    if (!dest && v.venue && v.venue.name) dest = placeFromVenue(name.toLowerCase(), v.venue);
+    return {info:{label:String(v.label || name).slice(0,40), cat:v.cat, max,
+      min: Math.max(2, Math.min(max, Math.round(Number(v.min)) || 2)), meet, dest: dest || CAT_DEST[v.cat],
+      reason: String(v.reason || '').slice(0,320), byAI:true}};
+  } catch (e) { return {info:null, err: e && e.code}; }
+}
+async function addCustom(raw, force){
+  if (!force) {
+    if (!raw.trim()) return;
+    if (S.tastes.length >= MAX_INT) { S.custom = {state:'error', msg:FULL_MSG}; render(); return; }
+    const ck = checkName(raw); if (ck.err) { S.custom = {state:'error', msg:ck.err}; render(); return; }
+    raw = ck.name;
+  }
+  const name = raw.trim().slice(0,40); if (!name) return;
+  const key = name.toLowerCase();
+  if (KW[key] && !force) { openSheet(key); return; }
+  S.sheet = null; S.custom = {state:'busy', name, msg:''}; render();
+  const {info, err} = await thinkAbout(name);
+  const fin = info || {label:name, cat:'Other', max:4, min:2, meet:'kimmel', dest:'wsp', reason:''};
+  KW[key] = {...fin, name, minDef: fin.min};
+  S.catTab = fin.cat;
+  const t = S.tastes.find(t => t.kw === key);
+  if (t) { t.cat = fin.cat; t.min = Math.min(t.min, fin.max); }
+  S.custom = info ? {state:'idle', msg:`Claude thought it through: ${fin.cat} · up to ${fin.max} people`}
+    : {state:'error', msg: (err === 'none' ? 'Claude isn’t connected in this view.' : aiError(err)) + ' Added with defaults (Other, max 4).'};
+  openSheet(key);
+  if (t) profileChanged();
+}
+function openSheet(kw){
+  const t = S.tastes.find(t => t.kw === kw), info = kwInfo(kw);
+  S.sheet = {kw, min: t ? t.min : Math.min(info.minDef, info.max), custom: !BASE_KWS.includes(kw)}; render();
+}
+function profileChanged(){
+  if (S.step !== 'app') return;
+  clearTimeout(profileChanged.t);
+  profileChanged.t = setTimeout(() => { recompute(); render(); const r = pushNext('A plan fits the next few hours'); if (!r) toast('Matching re-ran with your updated profile'); render(); }, 500);
+}
+function startApp(tab = 'inbox'){
+  S.step = 'app'; S.tab = tab; S.view = null;
+  recompute(); render();
+  later(() => { pushNext('A plan fits the next few hours'); render(); }, 1200);
+}
+function nado(key){
+  const r = S.recs[key]; if (!r || r.status !== 'new') return;
+  hideBanner();
+  r.status = 'forming'; r.confirms = {}; r.meConfirmed = false; r.createdAt = now().getTime();
+  S.tab = 'groups'; S.view = null; render();
+  const pop = $('#pop'); pop.innerHTML = `<img class="mascot" src="${MASCOT}" alt=""><b>Nado!</b>`; pop.hidden = false;
+  clearTimeout(nado.t); nado.t = setTimeout(() => pop.hidden = true, 1100);
+  toast('Added to your groups');
+  later(() => {
+    if (r.status !== 'forming') return;
+    r.status = 'confirm'; r.members.forEach(m => r.confirms[m.id] = false); render();
+    r.members.forEach((m, i) => later(() => { if (r.status !== 'confirm') return; r.confirms[m.id] = true; maybeOpen(r); render(); }, 900 + i * 650 + (hash(m.id) % 500)));
+  }, 1500);
+}
+function maybeOpen(r){
+  if (r.status === 'confirm' && r.meConfirmed && Object.values(r.confirms).every(Boolean)) {
+    r.status = 'room'; if (!S.confirmed.includes(r.key)) S.confirmed.push(r.key);
+    S.flags.room = true; recompute();
+    // go straight into the room; no separate "Enter room" tap
+    if (!S.game) { S.view = {type:'room', key:r.key}; S.flags.map = true; const scr = $('#screen'); if (scr) scr.scrollTop = 0; setTimeout(() => choosePlace(r), 0); }
+    toast('Everyone confirmed. You’re in, and it’s on your schedule');
+  }
+}
+function cancelMember(key){
+  const r = S.recs[key]; if (!r || !r.members.length) return;
+  const gone = r.members.pop();
+  S.excluded[key] = [...(S.excluded[key] || []), gone.id];
+  const size = r.members.length + 1, tm = teamMinOf(r);
+  if (size >= tm) { toast(`${seedById(gone.id).nick} cancelled. Still ${size} (min ${tm})`); render(); return; }
+  r.status = 'dissolved';
+  S.history.push({...r});
+  delete S.recs[key];
+  S.confirmed = S.confirmed.filter(k => k !== key);
+  S.flags.dissolve = true;
+  S.view = null; S.game = null; S.tab = 'groups';
+  render(); toast(`Down to ${size}, below the minimum. Room dissolved; rematching that hour`);
+  S.rematch.push(key);
+  later(() => {
+    recompute();
+    S.rematch = S.rematch.filter(k => k !== key);
+    const nr = S.recs[key];
+    if (nr && nr.status === 'new') { S.pushed = S.pushed.filter(k => k !== key); push(nr, 'Rematched: a new team for the same hour'); }
+    else toast('No new team fits that hour yet');
+    render();
+  }, 1800);
+}
+function quickSetup(){
+  timers.forEach(clearTimeout); timers = [];
+  S = freshState();
+  S.email = 'demo@nyu.edu';
+  applyClasses(SAMPLE_CLASSES); S.parse = {state:'done', src:'sample'};
+  for (let d = 0; d < 7; d++) S.grid[d][NH-1] = 'never';
+  S.grid[5][0] = S.grid[5][1] = 'never';
+  for (const h of [17,18,19]) S.grid[4][h-H0] = 'fixed';
+  S.tastes = [{kw:'ramen',cat:'Food',min:2},{kw:'boba',cat:'Cafe',min:3},{kw:'soccer',cat:'Sports',min:4}];
+  hideBanner(); startApp('me');
+}
+async function newQuestion(){
+  const g = S.game, r = S.recs[g.key];
+  await sampleReady;
+  const list = questionsFor(r.kw), nextLocal = () => { g.qi = (g.qi + 1) % list.length; g.question = list[g.qi]; };
+  if (!SAMPLE) { nextLocal(); render(); return; }
+  g.qBusy = true; render();
+  try {
+    const label = kwInfo(r.kw).label;
+    const {text} = await SAMPLE(`${r.members.length + 1} NYU students who are strangers just met to do this together: "${label}". ` +
+      `Write one light, funny icebreaker question that is specifically about ${label}: its habits, hot takes, rituals, or memorable moments. ` +
+      `Avoid generic questions about school, majors or hometowns, and don't repeat this one: "${g.question}". ` +
+      `Reply in English with the question only, no quotes.`, {modelTier:'quick', cache:false});
+    g.question = text.trim().replace(/^["“]|["”]$/g, '').slice(0, 140);
+  } catch (e) { nextLocal(); if (e && e.code !== 'cancelled') toast(aiError(e.code)); }
+  g.qBusy = false; render();
+}
+
+/* ---------- events ---------- */
+const phone = $('#phone');
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const a = b.dataset.act, key = b.dataset.key;
+  switch (a) {
+    case 'to-login': S.step = 'login'; S.codeErr = ''; render(); break;
+    case 'resend': toast(`New code sent to ${S.email} (demo)`); break;
+    case 'sample-sched': applyClasses(SAMPLE_CLASSES); S.parse = {state:'done', src:'sample'}; render(); profileChanged(); break;
+    case 'mode': S.mode = b.dataset.mode; render(); break;
+    case 'to-taste': S.step = 'taste'; render(); $('#screen').scrollTop = 0; break;
+    case 'kw': { const k = b.dataset.kw; if (!S.tastes.some(t => t.kw === k) && S.tastes.length >= MAX_INT) { toast(FULL_MSG); break; } openSheet(k); break; }
+    case 'cattab': S.catTab = b.dataset.cat; render(); break;
+    case 'to-browse': { const el = document.getElementById('browse'); if (el) el.scrollIntoView({behavior:'smooth', block:'start'}); break; }
+    case 'clocktap': { const t = Date.now(); clockTaps = clockTaps.filter(x => t - x < 2000).concat(t); if (clockTaps.length >= 5) { clockTaps = []; S.clockSheet = true; render(); } break; }
+    case 'clock-preset': setClock(b.dataset.id); afterClock(); break;
+    case 'clock-real': setClock('real'); afterClock(); break;
+    case 'clock-set': { const dv = $('#ckdate').value, tv = $('#cktime').value; if (!dv || !tv) break; const base = new Date(`${dv}T${tv}`); if (isNaN(base)) break; clock = {id:'custom', base, set:Date.now()}; afterClock(); break; }
+    case 'leave': {
+      const r = S.recs[key]; if (!r) break;
+      delete S.recs[key]; S.confirmed = S.confirmed.filter(k => k !== key); S.left[key] = true;
+      S.view = null; S.game = null; S.tab = 'groups'; render(); toast('You left the group'); break; }
+    case 'home': S.game = null; S.view = null; S.tab = 'inbox'; S.flags.found = true; render(); $('#screen').scrollTop = 0; break;
+    case 'min-dec': S.sheet.min = Math.max(2, S.sheet.min - 1); render(); break;
+    case 'min-inc': S.sheet.min = Math.min(kwInfo(S.sheet.kw).max, S.sheet.min + 1); render(); break;
+    case 'sheet-close': S.sheet = null; render(); break;
+    case 'sheet-save': {
+      const t = S.tastes.find(t => t.kw === S.sheet.kw);
+      if (!t && S.tastes.length >= MAX_INT) { toast(FULL_MSG); break; }
+      if (t) t.min = S.sheet.min; else S.tastes.push({kw:S.sheet.kw, cat:catOf(S.sheet.kw), min:S.sheet.min});
+      S.sheet = null; render(); profileChanged(); break; }
+    case 'sheet-remove': S.tastes = S.tastes.filter(t => t.kw !== S.sheet.kw); S.sheet = null; render(); profileChanged(); break;
+    case 'start': startApp(); break;
+    case 'tab': S.tab = b.dataset.tab; S.view = null; S.highlight = null; render(); $('#screen').scrollTop = 0; break;
+    case 'nado': nado(key); break;
+    case 'banner-close': hideBanner(); break;
+    case 'banner-open': hideBanner(); S.tab = 'inbox'; S.view = null; S.highlight = key; render();
+      { const el = document.getElementById('rec-' + key); if (el) el.scrollIntoView({block:'center'}); } break;
+    case 'run-match': { recompute(); const r = pushNext('A plan fits the next few hours'); if (!r) toast('No new plans for the next 4 hours'); render(); break; }
+    case 'confirm': { const r = S.recs[key]; if (r) { r.meConfirmed = true; maybeOpen(r); render(); } break; }
+    case 'open-room': S.view = {type:'room', key}; S.flags.map = true; render(); $('#screen').scrollTop = 0; choosePlace(S.recs[key]); break;
+    case 'back':
+      if (S.view && S.view.type === 'game') { S.view = {type:'room', key:S.view.key}; S.game = null; }
+      else S.view = null;
+      render(); break;
+    case 'cancel-member': cancelMember(key); break;
+    case 'pre-meet': {
+      const r = S.recs[key];
+      S.game = {key, phase:'outfit', outfit:{color:'', top:'', shoes:'', hair:''}, targets: r.members.slice(0,3).map(m => ({id:m.id, found:false, hint:0})), idx:0, dunno:0, question: questionsFor(r.kw)[0], qi:0};
+      S.view = {type:'game', key}; render(); $('#screen').scrollTop = 0; break; }
+    case 'outfit': S.game.outfit[b.dataset.k] = b.dataset.v; render(); break;
+    case 'send-outfit': S.game.phase = 'hunt'; render(); toast('Outfit sent to the AI. Your group hints are here'); break;
+    case 'found': {
+      const g = S.game; g.targets[g.idx].found = true;
+      const n = g.targets.findIndex(t => !t.found);
+      if (n < 0) { g.phase = 'done'; S.flags.found = true; } else g.idx = n;
+      render(); break; }
+    case 'dunno': { const g = S.game, t = g.targets[g.idx]; g.dunno++; if (t.hint < 2) t.hint++; render(); break; }
+    case 'giveup': {
+      const g = S.game; g.phase = 'glow'; g.foundBy = ''; S.flags.glow = true; render();
+      const t = g.targets.find(t => !t.found);
+      later(() => { if (S.game === g && g.phase === 'glow') { g.foundBy = seedById(t.id).nick; render(); } }, 3200);
+      break; }
+    case 'glow-done': S.game.targets.forEach(t => t.found = true); S.game.phase = 'done'; S.flags.found = true; render(); break;
+    case 'new-q': newQuestion(); break;
+    case 'rethink': { const k = S.sheet.kw; addCustom((KW[k] && KW[k].name) || k, true); break; }
+    case 'quick': quickSetup(); break;
+    case 'reset': timers.forEach(clearTimeout); timers = []; hideBanner(); S = freshState(); render(); break;
+    case 'sheet-bg': break;
+  }
+});
+document.addEventListener('submit', e => {
+  e.preventDefault();
+  if (e.target.id === 'loginForm') {
+    const v = $('#email').value.trim();
+    S.email = v;
+    if (!/^[a-z0-9._%+-]+@nyu\.edu$/i.test(v)) { S.loginErr = 'Use your NYU email (ending in @nyu.edu).'; render(); return; }
+    S.loginErr = ''; S.codeErr = ''; S.step = 'verify'; render(); toast(`Code sent to ${v} (demo)`);
+  }
+  if (e.target.id === 'codeForm') {
+    const code = [0,1,2,3,4,5].map(i => ($('#code' + i).value || '').trim()).join('');
+    if (!/^\d{6}$/.test(code)) { S.codeErr = 'Enter all 6 digits.'; render(); return; }
+    S.codeErr = ''; startApp('me'); toast('Verified. Set up your profile to get matched');
+  }
+  if (e.target.id === 'customForm') addCustom($('#customKw').value);
+});
+document.addEventListener('input', e => {
+  const m = e.target.id && e.target.id.match(/^code(\d)$/); if (!m) return;
+  const i = +m[1], v = e.target.value.replace(/\D/g, '');
+  if (v.length > 1) { // pasted or autofilled several digits
+    v.slice(0, 6 - i).split('').forEach((ch, j) => { const el = $('#code' + (i + j)); if (el) el.value = ch; });
+    const nx = $('#code' + Math.min(5, i + v.length)); if (nx) nx.focus();
+  } else {
+    e.target.value = v;
+    if (v && i < 5) $('#code' + (i + 1)).focus();
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && (S.sheet || S.clockSheet)) { S.sheet = null; S.clockSheet = false; render(); }
+  const m = e.target.id && e.target.id.match(/^code(\d)$/);
+  if (m && e.key === 'Backspace' && !e.target.value && +m[1] > 0) $('#code' + (+m[1] - 1)).focus();
+});
+document.addEventListener('change', e => {
+  if (e.target.id === 'albert') readAlbert(e.target.files && e.target.files[0]);
+  if (e.target.id === 'democlock') { setClock(e.target.value); tick(); if (S.step === 'app') { recompute(); render(); later(() => { pushNext('A plan fits the next few hours'); render(); }, 600); } else render(); toast('Clock set to ' + CLOCKS.find(c => c.id === clock.id).label.split(' · ')[0]); }
+  if (e.target.id === 'notif') { S.notifOn = e.target.checked; if (!S.notifOn) hideBanner(); toast(S.notifOn ? 'Match notifications on' : 'Notifications off. Matches still land in your inbox'); }
+});
+$('#sheet').addEventListener('click', e => { if (e.target.id === 'sheet') { S.sheet = null; S.clockSheet = false; render(); } });
+document.addEventListener('mousedown', e => { if (e.detail > 1 && e.target.closest('[data-act="clocktap"]')) e.preventDefault(); });
+
+/* grid painting */
+let paint = null;
+function applyCell(cell, d, h, val){
+  const cur = S.grid[d][h];
+  if (cur === val || cell.classList.contains('c-confirmed')) return;
+  if (cur === 'class' && val !== null) return;
+  S.grid[d][h] = val; paint.changed = true;
+  cell.className = 'cell' + (cell.dataset.x || '') + (val ? ' c-' + val : '');
+}
+phone.addEventListener('pointerdown', e => {
+  const cell = e.target.closest('.grid.editable .cell[data-d]'); if (!cell) return;
+  e.preventDefault();
+  const d = +cell.dataset.d, h = +cell.dataset.h, cur = S.grid[d][h];
+  const val = S.mode === 'erase' ? null : (cur === S.mode ? null : S.mode);
+  paint = {val, changed:false};
+  applyCell(cell, d, h, val);
+  try { cell.closest('.grid').setPointerCapture(e.pointerId); } catch (_) {}
+});
+phone.addEventListener('pointermove', e => {
+  if (!paint) return;
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  const cell = el && el.closest && el.closest('.grid.editable .cell[data-d]');
+  if (cell) applyCell(cell, +cell.dataset.d, +cell.dataset.h, paint.val);
+});
+const endPaint = () => { if (!paint) return; const ch = paint.changed; paint = null; if (ch) { renderGuide(); profileChanged(); } };
+window.addEventListener('pointerup', endPaint);
+window.addEventListener('pointercancel', endPaint);
+
+let clockTaps = [];
+function afterClock(){
+  S.clockSheet = false; tick();
+  if (S.step === 'app') { recompute(); render(); later(() => { pushNext('A plan fits the next few hours'); render(); }, 600); } else render();
+  toast(clock.base ? 'Clock moved' : 'Back to real time');
+}
+let lastMinute = Math.floor(Date.now() / 60000);
+setInterval(() => {
+  const ms = Date.now(), left = 60000 - (ms % 60000), el = document.getElementById('nextcheck');
+  if (el) {
+    el.querySelector('.ring').style.setProperty('--p', `${Math.round((1 - left / 60000) * 360)}deg`);
+    el.querySelector('.next-in .mono').textContent = `00:${String(Math.ceil(left / 1000) % 60).padStart(2, '0')}`;
+  }
+  const m = Math.floor(ms / 60000);
+  if (m !== lastMinute) {
+    lastMinute = m;
+    if (S.step === 'app' && !S.sheet && !S.clockSheet) { recompute(); const r = pushNext('A plan fits the next few hours'); if (r || S.tab === 'inbox') render(); }
+  }
+}, 1000);
+function tick(){ const n = now(); $('#clock').textContent = `${h12(n.getHours())}:${String(n.getMinutes()).padStart(2,'0')}`; }
+tick(); setInterval(tick, 20000);
+
+render();
+})();
+</script>
+
+</body>
+</html>
